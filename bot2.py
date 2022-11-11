@@ -22,10 +22,34 @@ import json
 import random
 import re
 import time
-# 进度条展示
-from progressbar import ProgressBar, Percentage, Bar, Timer, ETA, FileTransferSpeed
 from pathlib import Path
 from PicClass import *
+
+from pornhub_api import PornhubApi
+
+api = PornhubApi()
+
+
+def SearchPoHub(strTag="beautiful", page=1):
+    data = api.search.search(
+        strTag,
+        page=page,
+        ordering="mostviewed",
+        period="monthly",
+        tags=[],
+    )
+    strRes = "搜索失败"
+    try:
+        strRes = "搜索成功:\n"
+        aaarrr = data.videos
+        if len(data.videos) > 5:
+            aaarrr = data.videos[0:5]
+        for vid in aaarrr:
+            strRes += "标题:\n "+vid.title+" \n播放链接:\n"+vid.url+" \n\n"
+        # print(vid.title+"\n")
+        return strRes
+    except:
+        return strRes
 
 
 # 贷款数据库
@@ -110,12 +134,12 @@ base_url = 'https://91porn.com/view_video.php?viewkey='
 
 def _get_m3u8_info(key):
     header_single = {'Accept-Language': 'zh-CN,zh;q=0.9',
-                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:66.0) Gecko/20100101 Firefox/66.0',
-                 'X-Forwarded-For': _random_ip(),
-                 'referer': page_url,
-                 'Content-Type': 'multipart/form-data; session_language=cn_CN',
-                 'Connection': 'keep-alive',
-                 'Upgrade-Insecure-Requests': '1', }
+                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:66.0) Gecko/20100101 Firefox/66.0',
+                     'X-Forwarded-For': _random_ip(),
+                     'referer': page_url,
+                     'Content-Type': 'multipart/form-data; session_language=cn_CN',
+                     'Connection': 'keep-alive',
+                     'Upgrade-Insecure-Requests': '1', }
 
     base_req = requests.get(url=base_url + key, headers=header_single,
                             timeout=60, verify=False, proxies=proxies)
@@ -156,13 +180,13 @@ def _get_m3u8_info(key):
 
 def getMainVeiwKey(nPageIndex=1):
     header_single = {'Accept-Language': 'zh-CN,zh;q=0.9',
-                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:66.0) Gecko/20100101 Firefox/66.0',
-                 'X-Forwarded-For': _random_ip(),
-                 'referer': page_url,
-                 'Content-Type': 'multipart/form-data; session_language=cn_CN',
-                 'Connection': 'keep-alive',
-                 'Upgrade-Insecure-Requests': '1', }
-                 
+                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:66.0) Gecko/20100101 Firefox/66.0',
+                     'X-Forwarded-For': _random_ip(),
+                     'referer': page_url,
+                     'Content-Type': 'multipart/form-data; session_language=cn_CN',
+                     'Connection': 'keep-alive',
+                     'Upgrade-Insecure-Requests': '1', }
+
     get_page = requests.get(page_url + str(nPageIndex),
                             headers=header_single, proxies=proxies)
     # print("aaaaaaaaaaaaaaa===>"+str(get_page.status_code))
@@ -720,11 +744,24 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                     return aqw
                     # return app.send_message(group, "合成失败,不支持,发送'表情合成帮助'查看可以用的emoji", quote=message)
                 img_str = base64.b64encode(content).decode()
-                repl3 = MessageChain(Image(base64=img_str), Plain("合成好了,发送'表情合成帮助'查看可以用的emoji"))
+                repl3 = MessageChain(Image(base64=img_str), Plain(
+                    "合成好了,发送'表情合成帮助'查看可以用的emoji"))
                 floatCDCDMixDelta = time.time()
                 return app.send_message(group, repl3, quote=message)
         if "表情" in strCont and "帮助" in strCont:
             strHHH = mix_emoji_help()
             return app.send_message(group, strHHH, quote=message)
+        if "ph搜索" in strCont:
+            if bWihteUser:
+                strTT = strCont.replace("ph搜索 ", "")
+                strTT = strTT.replace("ph搜索", "")
+                print("strTT===>", strTT)
+                try:
+                    tittle = SearchPoHub(strTT)
+                    return app.send_message(group, tittle, quote=message)
+                except:
+                    asdas = 1
+            else:
+                return app.send_message(group, "你没权限", quote=message)
 
 Ariadne.launch_blocking()
