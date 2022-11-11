@@ -104,7 +104,12 @@ def _random_ip():
 page_url = "https://91porn.com/v.php?category=top&viewtype=basic&page="
 base_url = 'https://91porn.com/view_video.php?viewkey='
 
-header_single = {'Accept-Language': 'zh-CN,zh;q=0.9',
+
+# 个key获取的m3u8信息（普通方法）
+
+
+def _get_m3u8_info(key):
+    header_single = {'Accept-Language': 'zh-CN,zh;q=0.9',
                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:66.0) Gecko/20100101 Firefox/66.0',
                  'X-Forwarded-For': _random_ip(),
                  'referer': page_url,
@@ -112,10 +117,6 @@ header_single = {'Accept-Language': 'zh-CN,zh;q=0.9',
                  'Connection': 'keep-alive',
                  'Upgrade-Insecure-Requests': '1', }
 
-# 个key获取的m3u8信息（普通方法）
-
-
-def _get_m3u8_info(key):
     base_req = requests.get(url=base_url + key, headers=header_single,
                             timeout=60, verify=False, proxies=proxies)
     base_req.encoding = base_req.apparent_encoding
@@ -154,6 +155,14 @@ def _get_m3u8_info(key):
 
 
 def getMainVeiwKey(nPageIndex=1):
+    header_single = {'Accept-Language': 'zh-CN,zh;q=0.9',
+                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:66.0) Gecko/20100101 Firefox/66.0',
+                 'X-Forwarded-For': _random_ip(),
+                 'referer': page_url,
+                 'Content-Type': 'multipart/form-data; session_language=cn_CN',
+                 'Connection': 'keep-alive',
+                 'Upgrade-Insecure-Requests': '1', }
+                 
     get_page = requests.get(page_url + str(nPageIndex),
                             headers=header_single, proxies=proxies)
     # print("aaaaaaaaaaaaaaa===>"+str(get_page.status_code))
