@@ -25,31 +25,47 @@ import time
 from pathlib import Path
 from PicClass import *
 
-from pornhub_api import PornhubApi
 
-api = PornhubApi()
+def base64_to_pillow(base64_str):
+    image = base64.b64decode(base64_str)
+    image = BytesIO(image)
+    image = ImagePIL.open(image)
+    return image
 
 
-def SearchPoHub(strTag="beautiful", page=1):
-    data = api.search.search(
-        strTag,
-        page=page,
-        ordering="mostviewed",
-        period="monthly",
-        tags=[],
-    )
-    strRes = "搜索失败"
+class ImageGetTagError(Exception):
+    def __init__(self,err):
+        super().__init__(self)  # 初始化父类
+        self.errorinfo = f"ImageGetTagError: {err}"
+
+    def __str__(self):
+        return self.errorinfo
+
+
+def getImgTag(img_io):
+    url = "http://dev.kanotype.net:8003/deepdanbooru/upload"
+    files = {
+    "network_type":(None,"general"),
+    "file":("0.png",img_io,"image/png")}
     try:
-        strRes = "搜索成功:\n"
-        aaarrr = data.videos
-        if len(data.videos) > 5:
-            aaarrr = data.videos[0:5]
-        for vid in aaarrr:
-            strRes += "标题:\n "+vid.title+" \n播放链接:\n"+vid.url+" \n\n"
-        # print(vid.title+"\n")
-        return strRes
+        response = requests.post(url, timeout = 60,files = files)
+        data: str = response.text
     except:
-        return strRes
+        return '请求超时'
+
+    # print("data"+data)
+
+    tags = re.findall(r'target="_blank">(.*)</a></td>',data)
+    num = re.findall(r'<td>(\d+\.?\d+)</td>',data)
+    data_dict = dict(zip(tags, num))
+    a1 = sorted(data_dict.items(), key=lambda x: x[1],reverse=True)
+    taglist = []
+    for (a,b) in a1:
+        taglist.append(a)
+    tags :str = ", ".join(taglist)
+    tags = tags.replace("rating:safe,","")
+
+    return tags
 
 
 # 贷款数据库
@@ -98,8 +114,8 @@ def SaveSDData():
 
 
 proxies = {
-    'http': 'http://127.0.0.1:2090',  # 本地的代理转发
-    'https': 'https://127.0.0.1:2090'
+    'http': 'http://127.0.0.1:1080',  # 本地的代理转发
+    'https': 'https://127.0.0.1:1080'
 }
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
            'Chrome/63.0.3239.132 Safari/537.36Name',
@@ -123,93 +139,6 @@ def _random_ip():
     ip = (str(a) + '.' + str(b) + '.' + str(c) + '.' + str(d))
     return ip
 
-
-# page_url = "https://91porn.com/index.php"
-page_url = "https://91porn.com/v.php?category=top&viewtype=basic&page="
-base_url = 'https://91porn.com/view_video.php?viewkey='
-
-
-# 个key获取的m3u8信息（普通方法）
-
-
-def _get_m3u8_info(key):
-    header_single = {'Accept-Language': 'zh-CN,zh;q=0.9',
-                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:66.0) Gecko/20100101 Firefox/66.0',
-                     'X-Forwarded-For': _random_ip(),
-                     'referer': page_url,
-                     'Content-Type': 'multipart/form-data; session_language=cn_CN',
-                     'Connection': 'keep-alive',
-                     'Upgrade-Insecure-Requests': '1', }
-
-    base_req = requests.get(url=base_url + key, headers=header_single,
-                            timeout=60, verify=False, proxies=proxies)
-    base_req.encoding = base_req.apparent_encoding
-    from urllib.parse import unquote
-    if base_req.status_code == 200:
-        # 获取视频名称
-        raw_title = re.findall(r'<h4 class="login_register_header" align=left>(.*?)</h4>',
-                               str(base_req.content), re.S)[0]
-        raw_title = sorted(raw_title.split(
-            " "), key=lambda x: len(x), reverse=True)[0]
-        """
-         \xe6\x9e\x81\xe5\x93\x81\xe9\x98\xbf\xe5\xa7\xa8\xef\xbc\x8c\xe8\xba\xab\xe6\x9d\x90\xe8\x8b\x97\xe6\
-         x9d\xa1\xe5\x85\xb3\xe9\x94\xae\xe5\xa5\xb6\xe5\xad\x90\xe8\xbf\x99\xe4\xb9\x88\xe6\x8c\xba\xe6\x8b\x94\n
-        """
-        tittle = _latin2utf8(raw_title).strip("\n").strip(" ")
-        # 匹配中文
-        tittle = re.findall(r'[\u4e00-\u9fa5]+', tittle)
-        if isinstance(tittle, list):
-            tittle = "".join(tittle)
-        # 获取视频内容
-        str_encode = re.findall(
-            r'strencode2\(\"(.*?)\"\)', str(base_req.content))
-        m3u8_base_url = ""
-        if len(str_encode) >= 1:
-            m3u8_base_url = re.findall(
-                r'src=(.*?) type', unquote(str_encode[0]))[0][1:-1]
-            # print(f"标题为{tittle}对应的m3u8地址为{m3u8_base_url}")
-        else:
-            m3u8_base_url = ""
-            # print(f"首次获取{tittle}对应的m3u8地址失败，正在重新获取...")
-
-        return m3u8_base_url, tittle
-    else:
-        return "", ""
-        print(f"获取key: {key}视频内容信息失败!")
-
-
-def getMainVeiwKey(nPageIndex=1):
-    header_single = {'Accept-Language': 'zh-CN,zh;q=0.9',
-                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:66.0) Gecko/20100101 Firefox/66.0',
-                     'X-Forwarded-For': _random_ip(),
-                     'referer': page_url,
-                     'Content-Type': 'multipart/form-data; session_language=cn_CN',
-                     'Connection': 'keep-alive',
-                     'Upgrade-Insecure-Requests': '1', }
-
-    get_page = requests.get(page_url + str(nPageIndex),
-                            headers=header_single, proxies=proxies)
-    # print("aaaaaaaaaaaaaaa===>"+str(get_page.status_code))
-    if get_page.status_code == 200:
-        # 更新获取方式（2022-08-11）
-        view_keys = re.findall(r'viewkey=(.*?)&', str(get_page.content))
-        # 去重
-        view_keys = list(set(view_keys))
-        # 调试
-        # print(f"本次一共收集到{len(view_keys)}个91porn学习视频...")
-        # for key in view_keys:
-        # print('find:' + key)
-    return view_keys
-
-
-def getOne91VTitleandUrl():
-    nPag = random.randint(1, 255)
-    view_keys = getMainVeiwKey(nPag)
-    nMaxVK = len(view_keys)
-    nVindex = random.randint(0, nMaxVK-1)
-    vkvk = view_keys[nVindex]
-    m3u8_base_url, tittle = _get_m3u8_info(vkvk)
-    return m3u8_base_url, tittle
 
 
 session = requests.Session()
@@ -345,7 +274,7 @@ def toBase64(imgUrl):
     return "data:image/png;base64," + img_str
 
 
-def img2img(imgBase64: str, prompt: str = ""):
+def img2img(imgBase64: str, prompt: str = "", wwwww = 640, height11 = 512):
 
     # print("resp=       ========== =>" + imgBase64)
 
@@ -361,8 +290,8 @@ def img2img(imgBase64: str, prompt: str = ""):
         "n_iter": 1,
         "steps": 28,
         "cfg_scale": 11,
-        "width": 640,
-        "height": 512,
+        "width": wwwww,
+        "height": height11,
         "negative_prompt": "nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry",
         "s_noise": 1,
         "sampler_index": "Euler a"
@@ -636,12 +565,28 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                 # print("=======strUrlqq======> " + strUrlqq)
                 html = toBase64(strUrlqq)
 
+                strBBBB = html.replace("data:image/png;base64,", "")
+                immm = base64_to_pillow(strBBBB)
+                imgTempSize = immm.size
+
                 repl2 = MessageChain(At(event.sender.id),
                                      Plain("\n收到,生成图片中,可能一分钟后成功...."))
                 await app.send_message(group, repl2)
+
+                www = 960
+                hhh = 512
+                print("============>", imgTempSize)
+                if "竖屏" in strCont or imgTempSize[0] < imgTempSize[1]:
+                    www = 512
+                    hhh = 960
+                
+                strAlllll = strAlllll.replace("竖屏", "")
+                strAlllll = strAlllll.replace("横屏", "")
+
                 img64 = ""
                 try:
-                    img64 = img2img(html, strAlllll)
+                    
+                    img64 = img2img(html, strAlllll,www, hhh)
                 except:
                     return app.send_message(group, "合成出错,也可能机器人在维护改bug中", quote=message)
                 strRepl = "\n你要求的图生成好了,剩余次数="+str(nLeft)
@@ -714,17 +659,6 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                 return app.send_message(group, repl3)
             except BaseException as eee:
                 return app.send_message(group, "合成失败,你发的什么玩意"+str(eee), quote=message)
-        if "91视频" in strCont:
-            if bWihteUser:
-                try:
-                    m3u8_base_url, tittle = getOne91VTitleandUrl()
-                    if len(m3u8_base_url) > 1 and len(tittle) > 1:
-                        return app.send_message(group, "随机发送一个视频\n 标题=>"+tittle+"\n 地址=>"+m3u8_base_url,
-                                                quote=message)
-                except:
-                    asdas = 1
-            else:
-                return app.send_message(group, "你没权限", quote=message)
         if len(strCont) == 2:
             fNowTime = time.time()
             dtTime = fNowTime - floatCDCDMixDelta
@@ -751,17 +685,21 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
         if "表情" in strCont and "帮助" in strCont:
             strHHH = mix_emoji_help()
             return app.send_message(group, strHHH, quote=message)
-        if "ph搜索" in strCont:
-            if bWihteUser:
-                strTT = strCont.replace("ph搜索 ", "")
-                strTT = strTT.replace("ph搜索", "")
-                print("strTT===>", strTT)
-                try:
-                    tittle = SearchPoHub(strTT)
-                    return app.send_message(group, tittle, quote=message)
-                except:
-                    asdas = 1
-            else:
-                return app.send_message(group, "你没权限", quote=message)
+        if  "图片信息" in strCont:
+            imageArr = event.message_chain[Image]
+            if len(imageArr) == 1:
+                picUrl = imageArr[0].url
+                r=requests.get(picUrl)
+                if r.status_code == 200:
+                    strTTag = getImgTag(r.content)
+                    if len(strTTag) <= 5:
+                        strTTag = "检测失败!!!!!"
+                    else:
+                        strTTag = "本次检测出来的关键词=\n"+strTTag
+
+                    return app.send_message(group, strTTag, quote=message)
+                
+
+
 
 Ariadne.launch_blocking()
