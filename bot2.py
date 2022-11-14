@@ -25,6 +25,17 @@ import time
 from pathlib import Path
 from PicClass import *
 
+
+
+#晚上22点到早上6点
+def GetLocalTimeHourNight():
+    hhh = datetime.datetime.now().hour
+    # print("=============>", hhh)
+    if hhh <= 6 or hhh >= 22:
+        return True
+    return False
+    
+
 # 贷款数据库
 sdDataArr = []
 curFileDir = Path(__file__).absolute().parent  # 当前文件路径
@@ -163,10 +174,11 @@ def CheckSDLeftTimesDelet(nGrouID, nDelet = 1):
         return False, sdDataArr[nGrouID]
 
 
-def AddSDLeftTimes(nGrouID):
+def AddSDLeftTimes(nGrouID, nAddNum = 10):
     nGrouID = str(nGrouID)
     nLeftNum = GetSDLeftTimes(nGrouID)
-    sdDataArr[nGrouID] = nLeftNum + 10
+    sdDataArr[nGrouID] = nLeftNum + nAddNum
+    SaveSDData()
     return sdDataArr[nGrouID]
 
 
@@ -439,7 +451,8 @@ def generate_random_str(randomlength=nRandomCodeLenth):
     """
     生成一个指定长度的随机字符串
     """
-    base_str = 'abcdefghigklmnopqrstuvwxyz0123456789'
+    # base_str = 'abcdefghigklmnopqrstuvwxyz0123456789'
+    base_str = '1Il0Oo'
     length = len(base_str) - 1
     for i in range(randomlength):
         random_str += base_str[random.randint(0, length)]
@@ -469,12 +482,30 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
 
     if At(157199224) in message:
         if "帮助" in strCont:
-            repl00 = MessageChain(Plain("\n1,发送pet获取头像表情包功能的菜单\n\n2,发送'生成图'或者'/ai text'加英文英文英文英文英文英文英文英文英文英文英文关键词,使用AI合成图\n\n" +
-                                        "3,发送'图生图'或者'/ai image'加一张图片和英文英文英文英文英文英文英文英文英文英文英文关键词描述,使用AI的以图合成图功能\n\n4,发送'高清'加一张图片,使用AI的超分辨率功能,提升4倍分辨率\n\n" +
+            repl00 = MessageChain(Plain("\n1,发送pet获取头像表情包功能的菜单\n\n2,发送'生成图'或者'/ai text'加关键词,使用AI合成图\n\n" +
+                                        "3,发送'图生图'或者'/ai image'加一张图片和关键词描述,使用AI的以图合成图功能\n\n4,发送'高清'加一张图片,使用AI的超分辨率功能,提升4倍分辨率\n\n" +
                                         "5,发送'动漫化'加一张图,使用AI的动漫风格合成功能\n\n6,发送'系统信息'查看机器人使用状态\n\n7,发送'语音合成'加需要合成的文字,可以使用派蒙声优的声线说出你需要的文字\n\n以上功能不需要@机器人\n\n以上功能不需要@机器人\n\n以上功能不需要@机器人\n\n"))
             return app.send_message(group, repl00, quote=message)
     else:
+        if "次数" in strCont and bWihteUser:
+            argsCount = [i.strip() for i in strCont.split(" ") if i.strip()]
+            if len(argsCount) == 3:
+                nCounts = 0
+                strRes = ""
+                try:
+                    nCounts = int(argsCount[2])
+                    nQQhao = int(argsCount[1])
+                    nLeft = AddSDLeftTimes(nQQhao, nCounts)
+                    strRes = str(nCounts)+"次生成次数赠送成功, 你的余额="+str(nLeft)
+
+                    repl00 = MessageChain(At(nQQhao) ,Plain(strRes))
+                    return app.send_message(group, repl00)
+                except BaseException:
+                    nCounts = "发次数错误!!! 输入'赠送次数 QQ号 金币数'来赠送"
+                    return app.send_message(group, nCounts, quote=message)
         if "生成图" in strCont or "/ai text" in strCont:
+            if GetLocalTimeHourNight():
+                return app.send_message(group, "时间太晚了, 明天7点再来吧", quote=message)
             bCan, nLeft = CheckSDLeftTimesNotDelet(nSendID)
             if bCan == False:
                 if len(random_str) != nRandomCodeLenth:
@@ -536,6 +567,8 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             floatTxt2img = time.time()
             return app.send_message(group, repl3, quote=message)
         if "图生图" in strCont or "/ai image" in strCont:
+            if GetLocalTimeHourNight():
+                return app.send_message(group, "时间太晚了, 明天7点再来吧", quote=message)
             bCan, nLeft = CheckSDLeftTimesNotDelet(nSendID)
             if bCan == False:
                 if len(random_str) != nRandomCodeLenth:
