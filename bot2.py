@@ -25,20 +25,54 @@ import time
 from pathlib import Path
 from PicClass import *
 
+nBotQQID = 1209916110
+nMasterQQ = 1973381512
 
 
-#晚上22点到早上6点
+curFileDir = Path(__file__).absolute().parent  # 当前文件路径
+
+# 基础优化tag
+basetag = "masterpiece, best quality,"
+
+# 基础排除tag
+lowQuality = "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, pubic hair,long neck,blurry"
+
+# 屏蔽词
+htags = "chest|boob|breast|tits|nsfw|nude|naked|nipple|blood|censored|vagina|gag|gokkun|hairjob|tentacle|oral|fellatio|areolae|lactation|paizuri|piercing|sex|footjob|masturbation|hips|penis|testicles|ejaculation|cum|tamakeri|pussy|pubic|clitoris|mons|cameltoe|grinding|crotch|cervix|cunnilingus|insertion|penetration|fisting|fingering|peeing|ass|buttjob|spanked|anus|anal|anilingus|enema|x-ray|wakamezake|humiliation|tally|futa|incest|twincest|pegging|femdom|ganguro|bestiality|gangbang|3P|tribadism|molestation|voyeurism|exhibitionism|rape|spitroast|cock|69|doggystyle|missionary|virgin|shibari|bondage|bdsm|rope|pillory|stocks|bound|hogtie|frogtie|suspension|anal|dildo|vibrator|hitachi|nyotaimori|vore|amputee|transformation|bloody"
+
+try:
+    with open(curFileDir / "pbc.json", "r", encoding="utf-8") as f:
+        pbcStr = json.load(f)
+        htags = pbcStr['pbc']
+except:
+    print("家长屏蔽词错误")
+
+
+def AddOnePbc(strPbc: str):
+    global htags
+    global htagsArr
+    htags += ("|"+strPbc)
+    htagsArr.append(strPbc)
+    with open(curFileDir / "pbc.json", 'w', encoding="utf-8")as f:
+        data = {"pbc": htags}
+        json.dump(data, f)
+
+
+htagsArr = [nsfw.strip() for nsfw in htags.split("|") if nsfw.strip()]
+# print("========>", htagsArr)
+
+
+# 晚上22点到早上6点
 def GetLocalTimeHourNight():
     hhh = datetime.datetime.now().hour
     # print("=============>", hhh)
     if hhh <= 6 or hhh >= 22:
         return True
     return False
-    
+
 
 # 贷款数据库
 sdDataArr = []
-curFileDir = Path(__file__).absolute().parent  # 当前文件路径
 with open(curFileDir / "sd.json", "r", encoding="utf-8") as f:
     plpCtx = json.load(f)
     dataArr = plpCtx['sdData']
@@ -73,7 +107,7 @@ face2paint = torch.hub.load(
 app = Ariadne(
     config(
         verify_key="ServiceVerifyKey",
-        account=157199224,
+        account=nBotQQID,
     ), log_config=LogConfig("INFO")
 )
 app.log_config.clear()
@@ -89,12 +123,13 @@ nRandomCodeLenth = 8
 random_str = ""
 
 
-def checkStrisCN(strCn:str):
+def checkStrisCN(strCn: str):
     if len(strCn) > 0:
         for ch in strCn:
             if u'\u4e00' <= ch <= u'\u9fff':
                 return True
     return False
+
 
 def FanyiCNToEn(strCn: str):
     strAAA = strCn
@@ -153,7 +188,6 @@ def GetSDLeftTimes(nGrouID):
         return sdDataArr[nGrouID]
 
 
-
 def CheckSDLeftTimesNotDelet(nGrouID):
     nGrouID = str(nGrouID)
     nLeftNum = GetSDLeftTimes(nGrouID)
@@ -163,7 +197,7 @@ def CheckSDLeftTimesNotDelet(nGrouID):
         return False, sdDataArr[nGrouID]
 
 
-def CheckSDLeftTimesDelet(nGrouID, nDelet = 1):
+def CheckSDLeftTimesDelet(nGrouID, nDelet=1):
     nGrouID = str(nGrouID)
     nLeftNum = GetSDLeftTimes(nGrouID)
     if nLeftNum >= nDelet:
@@ -174,7 +208,7 @@ def CheckSDLeftTimesDelet(nGrouID, nDelet = 1):
         return False, sdDataArr[nGrouID]
 
 
-def AddSDLeftTimes(nGrouID, nAddNum = 10):
+def AddSDLeftTimes(nGrouID, nAddNum=10):
     nGrouID = str(nGrouID)
     nLeftNum = GetSDLeftTimes(nGrouID)
     sdDataArr[nGrouID] = nLeftNum + nAddNum
@@ -332,7 +366,7 @@ def img2img(imgBase64: str, prompt: str = "", wwwww=640, height11=512):
         ],
         "resize_mode": 2,
         "denoising_strength": 0.55,
-        "prompt": prompt,
+        "prompt": basetag + " " + prompt,
         "seed": -1,
         "batch_size": 1,
         "n_iter": 1,
@@ -375,7 +409,7 @@ def txt2img(prompt: str,
             ):
 
     payload = {
-        "prompt": prompt,
+        "prompt":  basetag + " "+prompt,
         "negative_prompt": negative_prompt,
         "steps": min(steps, 50),
         "sampler_index": sampler_index,
@@ -468,19 +502,21 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
     global floatCDCDMix
     global random_str
     global nRandomCodeLenth
+    global nMasterQQ
+    global nBotQQID
     strCont = str(message)
-    nMasterQQ = 1973381512
     bWihteUser = False
     if event.sender.id == nMasterQQ:
         bWihteUser = True
     nSendID = event.sender.id
+    # print("strCont", strCont, event.sender.id)
 
     if random_str == strCont:
         nLeftTT = AddSDLeftTimes(nSendID)
         random_str = ""
         return app.send_message(group, "输入成功,获取10次机会,剩余"+str(nLeftTT), quote=message)
 
-    if At(157199224) in message:
+    if At(nBotQQID) in message:
         if "帮助" in strCont:
             repl00 = MessageChain(Plain("\n1,发送pet获取头像表情包功能的菜单\n\n2,发送'生成图'或者'/ai text'加关键词,使用AI合成图\n\n" +
                                         "3,发送'图生图'或者'/ai image'加一张图片和关键词描述,使用AI的以图合成图功能\n\n4,发送'高清'加一张图片,使用AI的超分辨率功能,提升4倍分辨率\n\n" +
@@ -496,13 +532,19 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                     nCounts = int(argsCount[2])
                     nQQhao = int(argsCount[1])
                     nLeft = AddSDLeftTimes(nQQhao, nCounts)
-                    strRes = str(nCounts)+"次生成次数赠送成功, 你的余额="+str(nLeft)
+                    strRes = "\n" + str(nCounts)+" 次生成次数赠送成功, 你的余额="+str(nLeft)
 
-                    repl00 = MessageChain(At(nQQhao) ,Plain(strRes))
+                    repl00 = MessageChain(At(nQQhao), Plain(strRes))
                     return app.send_message(group, repl00)
                 except BaseException:
                     nCounts = "发次数错误!!! 输入'赠送次数 QQ号 金币数'来赠送"
                     return app.send_message(group, nCounts, quote=message)
+        elif "屏蔽" in strCont and bWihteUser:
+            argsCount = [i.strip() for i in strCont.split(" ") if i.strip()]
+            if len(argsCount) == 2:
+                strPPBBCC = argsCount[1]
+                AddOnePbc(strPPBBCC)
+                return app.send_message(group, strPPBBCC+"屏蔽成功", quote=message)
         if "生成图" in strCont or "/ai text" in strCont:
             if GetLocalTimeHourNight():
                 return app.send_message(group, "时间太晚了, 明天7点再来吧", quote=message)
@@ -518,10 +560,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             dtTime = fNowTime - floatTxt2img
             dtTime = int(dtTime)
             strCont = strCont.lower()
-            if "nude" in strCont or "nipple" in strCont or "breast" in strCont or "pussy" in strCont or "nsfw" in strCont or "sex" in strCont or "ass" in strCont or "disrobe" in strCont:
-                if bWihteUser == False:
-                    repl00 = MessageChain(Plain("\n你想要色色?要我喊管理过来吗?"))
-                    return app.send_message(group, repl00, quote=message)
+
             if dtTime < floatCDCD:
                 leftTime = floatCDCD-dtTime
                 repl1 = MessageChain(Plain(
@@ -530,7 +569,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                     return app.send_message(group, repl1, quote=message)
             floatTxt2img = time.time()
             strSsss = strCont.replace("生成图 ", "")
-            strSsss = strCont.replace("生成图", "")
+            strSsss = strSsss.replace("生成图", "")
             strSsss = strSsss.replace("/ai text ", "")
             strSsss = strSsss.replace("/ai text", "")
             strSsss = strSsss.replace("，", ",")
@@ -544,11 +583,20 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             bUseCn = checkStrisCN(strSsss)
             strUSeCN = ""
             nDeletNum = 1
-            if bUseCn :
+            if bUseCn:
                 strSsss = FanyiCNToEn(strSsss)
                 nDeletNum = 3
                 strUSeCN = "\n使用了中文关键词,所以扣除"+str(nDeletNum)+"分"
-           
+
+            for strTag in htagsArr:
+                strTag1 = " "+strTag
+                strTag2 = ","+strTag
+                # if strTag1 in strSsss or strTag2 in strSsss:
+                if strTag in strSsss and not bWihteUser:
+                    nDeletNum = 5
+                    CheckSDLeftTimesDelet(nSendID, nDeletNum)
+                    return app.send_message(group, strTag + "为违禁词,积分已扣除" + str(nDeletNum) + "分, 不再返还", quote=message)
+                    # if bWihteUser == False:
 
             repl2 = MessageChain(At(event.sender.id),
                                  Plain("\n收到,生成图片中,可能一分钟后成功...."))
@@ -579,10 +627,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                 return app.send_message(group, repl00, quote=message)
 
             strCont = strCont.lower()
-            if "nude" in strCont or "nipple" in strCont or "breast" in strCont or "pussy" in strCont or "nsfw" in strCont or "sex" in strCont or "ass" in strCont or "disrobe" in strCont:
-                if bWihteUser == False:
-                    repl00 = MessageChain(Plain("\n你想要色色?要我喊管理过来吗?"))
-                    return app.send_message(group, repl00, quote=message)
+            # if bWihteUser == False:
 
             imageArr = event.message_chain[Image]
             # print("=============>"+str(imageArr))
@@ -598,7 +643,6 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                 strAlllll = strAlllll.replace("/ai image ", "")
                 strAlllll = strAlllll.replace("/ai image", "")
                 strUrlqq = imageArr[0].url
-
 
                 # print("=======strUrlqq======> " + strUrlqq)
                 html = toBase64(strUrlqq)
@@ -620,14 +664,23 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
 
                 strAlllll = strAlllll.replace("竖屏", "")
                 strAlllll = strAlllll.replace("横屏", "")
-                
+
                 bUseCn = checkStrisCN(strAlllll)
                 strUSeCN = ""
                 nDeletNum = 1
-                if bUseCn :
+                if bUseCn:
                     strAlllll = FanyiCNToEn(strAlllll)
                     nDeletNum = 3
                     strUSeCN = "\n使用了中文关键词,所以扣除"+str(nDeletNum)+"分"
+
+                for strTag in htagsArr:
+                    strTag1 = " "+strTag
+                    strTag2 = ","+strTag
+                    # if strTag1 in strAlllll or  strTag2 in strAlllll:
+                    if strTag in strAlllll and not bWihteUser:
+                        nDeletNum = 5
+                        CheckSDLeftTimesDelet(nSendID, nDeletNum)
+                        return app.send_message(group, strTag + "为违禁词,积分已扣除" + str(nDeletNum) + "分, 不再返还", quote=message)
 
                 img64 = ""
                 try:
@@ -635,8 +688,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                     img64 = img2img(html, strAlllll, www, hhh)
                 except:
                     return app.send_message(group, "合成出错,也可能机器人在维护改bug中", quote=message)
-               
-                
+
                 bCan, nLeft = CheckSDLeftTimesDelet(nSendID, nDeletNum)
                 strRepl = "\n你要求的图生成好了,剩余次数="+str(nLeft)+''+strUSeCN
 
