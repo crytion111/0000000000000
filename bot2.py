@@ -16,7 +16,7 @@ import psutil
 import datetime
 import pynvml
 from io import BytesIO
-from pppaimon import RRRRRR
+# from pppaimon import RRRRRR
 from pathvalidate import sanitize_filepath
 import json
 import random
@@ -24,6 +24,10 @@ import re
 import time
 from pathlib import Path
 from PicClass import *
+from PIL import ImageEnhance
+import numpy as np
+from typing import Tuple
+
 
 nBotQQID = 1209916110
 nMasterQQ = 1973381512
@@ -93,15 +97,15 @@ model2 = torch.hub.load(
     "AK391/animegan2-pytorch:main",
     "generator",
     pretrained=True,
-    device="cuda",
+    device="cpu",
     progress=False
 )
 
 model1 = torch.hub.load("AK391/animegan2-pytorch:main",
-                        "generator", pretrained="face_paint_512_v1",  device="cuda")
+                        "generator", pretrained="face_paint_512_v1",  device="cpu")
 face2paint = torch.hub.load(
     'AK391/animegan2-pytorch:main', 'face2paint',
-    size=512, device="cuda", side_by_side=False
+    size=512, device="cpu", side_by_side=False
 )
 
 app = Ariadne(
@@ -121,6 +125,180 @@ floatCDCDMix = 20
 
 nRandomCodeLenth = 8
 random_str = ""
+
+
+np.seterr(divide="ignore", invalid="ignore")
+
+# ---------------------------------------TJTKTK
+
+
+def resize_image(im1: ImagePIL.Image, im2: ImagePIL.Image, mode: str) -> Tuple[ImagePIL.Image, ImagePIL.Image]:
+    """
+    统一图像大小
+    """
+    _wimg = im1.convert(mode)
+    _bimg = im2.convert(mode)
+
+    wwidth, wheight = _wimg.size
+    bwidth, bheight = _bimg.size
+
+    width = max(wwidth, bwidth)
+    height = max(wheight, bheight)
+
+    wimg = ImagePIL.new(mode, (width, height), 255)
+    bimg = ImagePIL.new(mode, (width, height), 0)
+
+    wimg.paste(_wimg, ((width - wwidth) // 2, (height - wheight) // 2))
+    bimg.paste(_bimg, ((width - bwidth) // 2, (height - bheight) // 2))
+
+    return wimg, bimg
+
+# 感谢老司机
+# https://zhuanlan.zhihu.com/p/32532733
+
+
+def color_car(
+    wimg: ImagePIL.Image,
+    bimg: ImagePIL.Image,
+    wlight: float = 1.0,
+    blight: float = 0.3,
+    wcolor: float = 0.01,
+    bcolor: float = 0.7,
+    chess: bool = False,
+) -> ImagePIL.Image:
+    """
+    发彩色车
+    :param wimg: 白色背景下的图片
+    :param bimg: 黑色背景下的图片
+    :param wlight: wimg 的亮度
+    :param blight: bimg 的亮度
+    :param wcolor: wimg 的色彩保留比例
+    :param bcolor: bimg 的色彩保留比例
+    :param chess: 是否棋盘格化
+    :return: 处理后的图像
+    """
+    wimg = ImageEnhance.Brightness(wimg).enhance(wlight)
+    bimg = ImageEnhance.Brightness(bimg).enhance(blight)
+
+    wimg, bimg = resize_image(wimg, bimg, "RGB")
+
+    wpix = np.array(wimg).astype("float64")
+    bpix = np.array(bimg).astype("float64")
+
+    if chess:
+        wpix[::2, ::2] = [255., 255., 255.]
+        bpix[1::2, 1::2] = [0., 0., 0.]
+
+    wpix /= 255.
+    bpix /= 255.
+
+    wgray = wpix[:, :, 0] * 0.334 + \
+        wpix[:, :, 1] * 0.333 + wpix[:, :, 2] * 0.333
+    wpix *= wcolor
+    wpix[:, :, 0] += wgray * (1. - wcolor)
+    wpix[:, :, 1] += wgray * (1. - wcolor)
+    wpix[:, :, 2] += wgray * (1. - wcolor)
+
+    bgray = bpix[:, :, 0] * 0.334 + \
+        bpix[:, :, 1] * 0.333 + bpix[:, :, 2] * 0.333
+    bpix *= bcolor
+    bpix[:, :, 0] += bgray * (1. - bcolor)
+    bpix[:, :, 1] += bgray * (1. - bcolor)
+    bpix[:, :, 2] += bgray * (1. - bcolor)
+
+    d = 1. - wpix + bpix
+
+    d[:, :, 0] = d[:, :, 1] = d[:, :, 2] = d[:, :, 0] * \
+        0.222 + d[:, :, 1] * 0.707 + d[:, :, 2] * 0.071
+
+    p = np.where(d != 0, bpix / d * 255., 255.)
+    a = d[:, :, 0] * 255.
+
+    colors = np.zeros((p.shape[0], p.shape[1], 4))
+    colors[:, :, :3] = p
+    colors[:, :, -1] = a
+
+    colors[colors > 255] = 255
+
+    return ImagePIL.fromarray(colors.astype("uint8")).convert("RGBA")
+
+
+def mkTKPic(strP1, strP2):
+    im1 = ImagePIL.open(strP1)
+    im2 = ImagePIL.open(strP2)
+    im1 = im1.resize(im2.size, ImagePIL.ANTIALIAS)
+    buffered = io.BytesIO()
+    color_car(im1, im2).save(buffered, format="png")
+    return base64.b64encode(buffered.getvalue()).decode()
+
+
+# -------------------------------------------------------------
+urls = 'http://openapi.turingapi.com/openapi/api/v2'
+api_key = "059f9782bab24de6a63d4083590a803b"
+# 回复
+
+
+def chatAI(data="你好"):
+    data_dict = {
+        "reqType": 0,
+        "perception": {
+            "inputText": {
+                "text": data
+            },
+        },
+        "userInfo": {
+            "apiKey": api_key,
+            "userId": "633677"
+        }
+    }
+    try:
+        result = requests.post(urls, json=data_dict)
+        content = result.text
+        # print(content)
+        ans = json.loads(content)
+        text = ans['results'][0]['values']['text']
+        # print('Niubility:',text)  # 机器人取名就叫Niubility
+        return text
+    except:
+        return "error_chatAI"
+
+
+# -- yuban10703 -------------------------------------------------------------------------------#--------------------------------------------------------------------------------------#---------------------------------------------------------------------------------
+def getYubanPic(tags="", pon="0"):
+    try:
+        # 0:safe,1:nos,2:all
+        api_url = 'https://setu.yuban10703.xyz/setu?r18=' + \
+            str(pon) + '&num=1&tags=' + tags
+        #data = {'r18': 0, 'num': 1, "tags":[]}
+        req = requests.get(api_url).text
+
+        if (json.loads(req)["detail"] and json.loads(req)["detail"][0] == "色"):
+            return "获取图片出错===> 老子没找到"
+        else:
+            datas = json.loads(req)["data"]
+            dataatata = datas[0]
+            picOriginalUrl = dataatata["urls"]["original"]
+            picLargeUrl = dataatata["urls"]["large"].replace(
+                "_webp", "").replace("i.pximg.net", "i.pixiv.re")
+            picMediumUrl = dataatata["urls"]["medium"].replace(
+                "_webp", "").replace("i.pximg.net", "i.pixiv.re")
+            picOriginalUrl_Msg = dataatata["urls"]["original"].replace(
+                "i.pximg.net", "i.pixiv.re")
+
+            # print("//////====>picOriginalUrl_Msg=> " + str(picMediumUrl))
+            return picMediumUrl
+    except Exception as e:
+        return "获取图片出错===>" + str(e)+" tags "+tags+" pn "+pon
+
+
+# -------------------------------------------------------------
+session = requests.Session()
+# 图片转为Base64
+
+
+def toBase64NotDataImage(imgUrl):
+    req = session.get(imgUrl)
+    return base64.b64encode(req.content).decode()
 
 
 def checkStrisCN(strCn: str):
@@ -522,6 +700,9 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                                         "3,发送'图生图'或者'/ai image'加一张图片和关键词描述,使用AI的以图合成图功能\n\n4,发送'高清'加一张图片,使用AI的超分辨率功能,提升4倍分辨率\n\n" +
                                         "5,发送'动漫化'加一张图,使用AI的动漫风格合成功能\n\n6,发送'系统信息'查看机器人使用状态\n\n7,发送'语音合成'加需要合成的文字,可以使用派蒙声优的声线说出你需要的文字\n\n以上功能不需要@机器人\n\n以上功能不需要@机器人\n\n以上功能不需要@机器人\n\n"))
             return app.send_message(group, repl00, quote=message)
+        else:
+            strRep = chatAI(str(event.message_chain))
+            return app.send_message(event, MessageChain(Plain(strRep)), quote=message)
     else:
         if "次数" in strCont and bWihteUser:
             argsCount = [i.strip() for i in strCont.split(" ") if i.strip()]
@@ -546,6 +727,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                 AddOnePbc(strPPBBCC)
                 return app.send_message(group, strPPBBCC+"屏蔽成功", quote=message)
         if "生成图" in strCont or "/ai text" in strCont:
+            return app.send_message(group, "公司电脑配置低, 无法使用AI合图", quote=message)
             if GetLocalTimeHourNight():
                 return app.send_message(group, "时间太晚了, 明天7点再来吧", quote=message)
             bCan, nLeft = CheckSDLeftTimesNotDelet(nSendID)
@@ -615,6 +797,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             floatTxt2img = time.time()
             return app.send_message(group, repl3, quote=message)
         if "图生图" in strCont or "/ai image" in strCont:
+            return app.send_message(group, "公司电脑配置低, 无法使用AI合图", quote=message)
             if GetLocalTimeHourNight():
                 return app.send_message(group, "时间太晚了, 明天7点再来吧", quote=message)
             bCan, nLeft = CheckSDLeftTimesNotDelet(nSendID)
@@ -716,7 +899,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                         At(event.sender.id), Plain("原图分辨率有边长超过1600,不再使用高清化"))
                     return app.send_message(group, repl31)
                 strADB = "realesrgan-ncnn-vulkan.exe -i " + \
-                    strPathName + " -o ./realesrgan/output.png -n " + strRRRR
+                    strPathName + " -o ./realesrgan/output.png -n " + strRRRR+" -s 2"
                 os.system(strADB)
                 strRepl = "\n画质提升好了,模型:" + strRRRR + \
                     "\n点击查看原图看效果\n默认使用真实世界模型\n发送'高清漫画'可以使用动漫专属模型"
@@ -760,7 +943,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                     Voice(path="./speach/" + strName + ".wav"))
                 return app.send_message(group, repl3)
             except BaseException as eee:
-                return app.send_message(group, "合成失败,你发的什么玩意"+str(eee), quote=message)
+                return app.send_message(group, "合成失败"+str(eee), quote=message)
         if len(strCont) == 2:
             fNowTime = time.time()
             dtTime = fNowTime - floatCDCDMixDelta
@@ -800,6 +983,45 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                         strTTag = "本次检测出来的关键词=\n"+strTTag
 
                     return app.send_message(group, strTTag, quote=message)
+        if "幻影坦克" in strCont:
+            imageArr = event.message_chain[Image]
+            imageNum = len(imageArr)
+            if imageNum == 2:
+                nIndex = 1
+                for img in imageArr:
+                    strUrlqq = img.url
+                    html = requests.get(strUrlqq)
+                    if nIndex == 2:
+                        with open('./22.png', 'wb') as file:
+                            file.write(html.content)
+                    if nIndex == 1:
+                        nIndex = 2
+                        with open('./11.png', 'wb') as file:
+                            file.write(html.content)
+                # 两张图??
+                f1 = '11.png'  # 上层
+                f2 = '22.png'  # 下层
+                base64_str = mkTKPic(f1, f2)
+                return app.send_message(group, MessageChain(At(event.sender.id), Image(base64=base64_str)), quote=message)
+        if "来张" in strCont and "图" in strCont:
+            args = [i.strip() for i in strCont.split(" ") if i.strip()]
+            # print(args)
+            strTag = ""
+            pornOpen = 0
+            if len(args) == 2:
+                strTag = args[1]
+            elif len(args) >= 3:
+                strTag = args[1]
+                try:
+                    pornOpen = int(args[2])
+                except:
+                    pornOpen = 0
+            # print("strTag===>", strTag)
+            strPic = getYubanPic(strTag, pornOpen)
+            if strPic.startswith("获取图片出错"):
+                return app.send_message(event, MessageChain(At(event.sender.id), Plain(strPic)), quote=message)
+            else:
+                return app.send_message(event, MessageChain(At(event.sender.id), Image(url=strPic)), quote=message)
 
 
 Ariadne.launch_blocking()
