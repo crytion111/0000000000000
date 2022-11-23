@@ -27,7 +27,7 @@ from PicClass import *
 from PIL import ImageEnhance
 import numpy as np
 from typing import Tuple
-
+import imageio
 
 nBotQQID = 1209916110
 nMasterQQ = 1973381512
@@ -230,6 +230,20 @@ def mkTKPic(strP1, strP2):
     buffered = io.BytesIO()
     color_car(im1, im2).save(buffered, format="png")
     return base64.b64encode(buffered.getvalue()).decode()
+
+
+def create_gif(image_list, gif_name, duration=0.6):
+    '''
+    :param image_list: 这个列表用于存放生成动图的图片
+    :param gif_name: 字符串，所生成gif文件名，带.gif后缀
+    :param duration: 图像间隔时间
+    :return:
+    '''
+    frames = []
+    for image_name in image_list:
+        frames.append(imageio.imread_v2(image_name))
+    imageio.mimsave(gif_name, frames, 'GIF', duration=duration)
+    return
 
 
 # -------------------------------------------------------------
@@ -702,7 +716,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             return app.send_message(group, repl00, quote=message)
         else:
             strRep = chatAI(str(event.message_chain))
-            return app.send_message(event, MessageChain(Plain(strRep)), quote=message)
+            return app.send_message(group, MessageChain(Plain(strRep)), quote=message)
     else:
         if "次数" in strCont and bWihteUser:
             argsCount = [i.strip() for i in strCont.split(" ") if i.strip()]
@@ -984,6 +998,8 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
 
                     return app.send_message(group, strTTag, quote=message)
         if "幻影坦克" in strCont:
+            if not os.path.exists("./hytk"):
+                os.mkdir("./hytk")
             imageArr = event.message_chain[Image]
             imageNum = len(imageArr)
             if imageNum == 2:
@@ -992,18 +1008,18 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                     strUrlqq = img.url
                     html = requests.get(strUrlqq)
                     if nIndex == 2:
-                        with open('./22.png', 'wb') as file:
+                        with open('./hytk/22.png', 'wb') as file:
                             file.write(html.content)
                     if nIndex == 1:
                         nIndex = 2
-                        with open('./11.png', 'wb') as file:
+                        with open('./hytk/11.png', 'wb') as file:
                             file.write(html.content)
                 # 两张图??
-                f1 = '11.png'  # 上层
-                f2 = '22.png'  # 下层
+                f1 = './hytk/11.png'  # 上层
+                f2 = './hytk/22.png'  # 下层
                 base64_str = mkTKPic(f1, f2)
                 return app.send_message(group, MessageChain(At(event.sender.id), Image(base64=base64_str)), quote=message)
-        if "来张" in strCont and "图" in strCont:
+        if "来张" in strCont and "色图" in strCont:
             args = [i.strip() for i in strCont.split(" ") if i.strip()]
             # print(args)
             strTag = ""
@@ -1019,9 +1035,67 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             # print("strTag===>", strTag)
             strPic = getYubanPic(strTag, pornOpen)
             if strPic.startswith("获取图片出错"):
-                return app.send_message(event, MessageChain(At(event.sender.id), Plain(strPic)), quote=message)
+                return app.send_message(group, MessageChain(At(event.sender.id), Plain(strPic)), quote=message)
             else:
-                return app.send_message(event, MessageChain(At(event.sender.id), Image(url=strPic)), quote=message)
+                return app.send_message(group, MessageChain(At(event.sender.id), Image(url=strPic)), quote=message)
+        if "买家秀" in strCont:
+            indexInt = random.randint(1, 4)
+            taobaoUrl = ""
+            if indexInt == 1:
+                taobaoUrl = "https://api.ghser.com/tao"
+            elif indexInt == 2:
+                taobaoUrl = "https://api.uomg.com/api/rand.img3?sort=胖次猫"
+            elif indexInt == 3:
+                taobaoUrl = "https://api.uomg.com/api/rand.img3?sort=七了个三"
+            else:
+                taobaoUrl = "https://api.uomg.com/api/rand.img3"
+            req = requests.get(taobaoUrl)
+            if not os.path.exists("./mjx"):
+                os.mkdir("./mjx")
+            filename = "./mjx/mz" + str(random.random())[2:] + ".png"
+            if req.status_code == 200:
+                with open(filename, 'wb') as f:
+                    f.write(req.content)
+                    return app.send_message(group, MessageChain(At(event.sender.id), Image(path=filename)), quote=message)
+        if "gif" in strCont and "来" in strCont or "来张动图" in strCont:
+            strTTTAG = ""
+            args = [i.strip() for i in strCont.split(" ") if i.strip()]
+            if (len(args) == 2):
+                strTTTAG = args[1]
+            # 0sfw, 1nsfw, 2all
+            api_url = 'https://setu.yuban10703.xyz/setu?r18=0&num=10&tags='+strTTTAG
+            req = requests.get(api_url).text
 
+            gifNameArr = []
+            if (json.loads(req)["detail"] and json.loads(req)["detail"][0] == "色"):
+                return app.send_message(group, "老子没找到", quote=message)
+            else:
+                await app.send_message(group, "稍等,正在下载并合成动图", quote=message)
+                datas = json.loads(req)["data"]
+                nameNum = 1
+                for dataatata in datas:
+                    picOriginalUrl = dataatata["urls"]["original"]
+                    picLargeUrl = dataatata["urls"]["large"].replace(
+                        "_webp", "").replace("i.pximg.net", "i.pixiv.re")
+                    picMediumUrl = dataatata["urls"]["medium"].replace(
+                        "_webp", "").replace("i.pximg.net", "i.pixiv.re")
+                    picOriginalUrl_Msg = dataatata["urls"]["original"].replace(
+                        "i.pximg.net", "i.pixiv.re")
+                    # print("//////====>picOriginalUrl_Msg=> " + str(picMediumUrl))
+                    try:
+                        req = session.get(picMediumUrl, timeout=10)
+                    except:
+                        return app.send_message(group, "网络超时,下次再试", quote=message)
+                    name = "./qqq/i"+str(nameNum)+".jpg"
+                    with open(name, 'wb') as f:
+                        f.write(req.content)
+                        gifNameArr.append(name)
+                        nameNum += 1
+            if not os.path.exists("./gif"):
+                os.mkdir("./gif")
+            gifName = "./gif/"+str(random.random())[2:] + ".gif"
+            create_gif(gifNameArr, gifName)
+            return app.send_message(group, MessageChain(At(event.sender.id), Image(path=gifName)), quote=message)
+            # A = 112
 
 Ariadne.launch_blocking()
