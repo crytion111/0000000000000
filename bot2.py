@@ -28,6 +28,7 @@ from PIL import ImageEnhance
 import numpy as np
 from typing import Tuple
 import imageio
+from xiuxian import *
 
 nBotQQID = 1209916110
 nMasterQQ = 1973381512
@@ -43,6 +44,28 @@ lowQuality = "lowres, bad anatomy, bad hands, text, error, missing fingers, extr
 
 # 屏蔽词
 htags = "chest|boob|breast|tits|nsfw|nude|naked|nipple|blood|censored|vagina|gag|gokkun|hairjob|tentacle|oral|fellatio|areolae|lactation|paizuri|piercing|sex|footjob|masturbation|hips|penis|testicles|ejaculation|cum|tamakeri|pussy|pubic|clitoris|mons|cameltoe|grinding|crotch|cervix|cunnilingus|insertion|penetration|fisting|fingering|peeing|ass|buttjob|spanked|anus|anal|anilingus|enema|x-ray|wakamezake|humiliation|tally|futa|incest|twincest|pegging|femdom|ganguro|bestiality|gangbang|3P|tribadism|molestation|voyeurism|exhibitionism|rape|spitroast|cock|69|doggystyle|missionary|virgin|shibari|bondage|bdsm|rope|pillory|stocks|bound|hogtie|frogtie|suspension|anal|dildo|vibrator|hitachi|nyotaimori|vore|amputee|transformation|bloody"
+
+
+######################################################################
+xxGame = XiuXianGame()
+xxGame.LoadAllPlayerInfo()
+
+
+def XXMain():
+    global xxGame
+    Timer(1, LoopPlayer).start()
+
+
+def LoopPlayer():
+    global xxGame
+    xxGame.UpdatePlayersZDL()
+    Timer(1, LoopPlayer).start()
+
+
+XXMain()
+
+######################################################################
+
 
 try:
     with open(curFileDir / "pbc.json", "r", encoding="utf-8") as f:
@@ -696,11 +719,14 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
     global nRandomCodeLenth
     global nMasterQQ
     global nBotQQID
+    global xxGame
     strCont = str(message)
     bWihteUser = False
     if event.sender.id == nMasterQQ:
         bWihteUser = True
     nSendID = event.sender.id
+    strSendName = event.sender.name
+    strUID = str(nSendID)
     # print("strCont", strCont, event.sender.id)
 
     if random_str == strCont:
@@ -1063,7 +1089,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             if (len(args) == 2):
                 strTTTAG = args[1]
             # 0sfw, 1nsfw, 2all
-            api_url = 'https://setu.yuban10703.xyz/setu?r18=0&num=10&tags='+strTTTAG
+            api_url = 'https://setu.yuban10703.xyz/setu?r18=0&num=5&tags='+strTTTAG
             req = requests.get(api_url).text
 
             gifNameArr = []
@@ -1097,5 +1123,64 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             create_gif(gifNameArr, gifName)
             return app.send_message(group, MessageChain(At(event.sender.id), Image(path=gifName)), quote=message)
             # A = 112
+        if True:
+            if "活一世" in strCont or "修仙重生" in strCont:
+                pl, strCon = xxGame.GetPlayerInfo(strUID, strSendName)
+                if not strCon.startswith("新建"):
+                    if pl.TiLi > 0:
+                        pl.ResetPlayerInfo()
+                        strCon = "重生成功\n" + pl.PrintPlayerInfo()
+                    else:
+                        strCon = "体力不足"
+                return app.send_message(group, strCon, quote=message)
+            if "修仙帮助" in strCont or "修仙指南" in strCont:
+                strCon = "1,开始修仙\n" +\
+                    "2,出去冒险\n" +\
+                    "3,寻找道侣\n" +\
+                    "4,开始双修\n" +\
+                    "5,抛弃道侣\n" +\
+                    "6,勾引他的道侣@此人\n" +\
+                    "7,抢夺他的道侣@此人\n" +\
+                    "8,查看信息@此人\n" +\
+                    "9,再活一世"
+                return app.send_message(group, strCon, quote=message)
+            if "开始修仙" in strCont:
+                pl, strCon = xxGame.GetPlayerInfo(strUID, strSendName)
+                if (len(strCon) <= 0):
+                    strCon = "欢迎回来,你现在属性:\n"+pl.PrintPlayerInfo()+'\n本系统会根据你的悟性自动提升战斗力'
+                return app.send_message(group, strCon, quote=message)
+            if "出去冒险" in strCont:
+                strCon = xxGame.PlayerAdventure(strUID, strSendName)
+                return app.send_message(group, strCon, quote=message)
+            if "寻找道侣" in strCont:
+                strCon = xxGame.SearchWife(strUID, strSendName)
+                return app.send_message(group, strCon, quote=message)
+            if "开始双修" in strCont:
+                strCCCC = xxGame.SHuangXiuWithWife(strUID, strSendName)
+                return app.send_message(group, strCCCC, quote=message)
+            if "抛弃道侣" in strCont:
+                strCCCC = xxGame.XXGiveUpWife(strUID, strSendName)
+                return app.send_message(group, strCCCC, quote=message)
+            if "勾引他的道侣" in strCont or "勾引道侣" in strCont:
+                atInfoArr = event.message_chain[At]
+                # print(atInfoArr)
+                if (len(atInfoArr) == 1):
+                    tarID = str(atInfoArr[0].target)
+                    strCCCC = xxGame.GouYinThisWife(strUID, strSendName, tarID)
+                    return app.send_message(group, strCCCC, quote=message)
+            if "抢夺他的道侣" in strCont or "抢夺道侣" in strCont:
+                atInfoArr = event.message_chain[At]
+                # print(atInfoArr)
+                if (len(atInfoArr) == 1):
+                    tarID = str(atInfoArr[0].target)
+                    strCCCC = xxGame.QiangDuoThisWife(
+                        strUID, strSendName, tarID)
+                    return app.send_message(group, strCCCC, quote=message)
+            if "查看" in strCont or "查看信息" in strCont:
+                atInfoArr = event.message_chain[At]
+                if (len(atInfoArr) == 1):
+                    tarID = str(atInfoArr[0].target)
+                    strCCCC = xxGame.LookThisManInfo(tarID)
+                    return app.send_message(group, strCCCC, quote=message)
 
 Ariadne.launch_blocking()
