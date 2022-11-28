@@ -1129,7 +1129,9 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                 if not strCon.startswith("新建"):
                     if pl.TiLi > 0:
                         pl.ResetPlayerInfo()
-                        strCon = "重生成功\n" + pl.PrintPlayerInfo()
+                        strCon = "重生成功\n" + pl.PrintPlayerInfo()+"\n9点悟性以上为卓越天资"
+                        if pl.WuXin >= 9:
+                            strCon += ("\n"+"恭喜抽到卓越天资!\n")
                     else:
                         strCon = "体力不足"
                 return app.send_message(group, strCon, quote=message)
@@ -1142,7 +1144,9 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                     "6,勾引他的道侣@此人\n" +\
                     "7,抢夺他的道侣@此人\n" +\
                     "8,查看信息@此人\n" +\
-                    "9,再活一世"
+                    "9,求婚@此人\n" +\
+                    "10,修仙排名\n" +\
+                    "11,再活一世"
                 return app.send_message(group, strCon, quote=message)
             if "开始修仙" in strCont:
                 pl, strCon = xxGame.GetPlayerInfo(strUID, strSendName)
@@ -1155,7 +1159,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             if "寻找道侣" in strCont:
                 strCon = xxGame.SearchWife(strUID, strSendName)
                 return app.send_message(group, strCon, quote=message)
-            if "开始双修" in strCont:
+            if "开始双修" in strCont or "开始双休" in strCont:
                 strCCCC = xxGame.SHuangXiuWithWife(strUID, strSendName)
                 return app.send_message(group, strCCCC, quote=message)
             if "抛弃道侣" in strCont:
@@ -1182,5 +1186,13 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                     tarID = str(atInfoArr[0].target)
                     strCCCC = xxGame.LookThisManInfo(tarID)
                     return app.send_message(group, strCCCC, quote=message)
-
+            if "求婚"in strCont:
+                atInfoArr = event.message_chain[At]
+                if (len(atInfoArr) == 1):
+                    tarID = str(atInfoArr[0].target)
+                    strCC = xxGame.QiuHun(strUID, strSendName, tarID)
+                    return app.send_message(group, strCC, quote=message)
+            if "修仙排名" in strCont:
+                strasd = xxGame.GetRank15Num()
+                return app.send_message(group, strasd, quote=message)
 Ariadne.launch_blocking()

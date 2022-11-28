@@ -27,14 +27,14 @@ class PlayerInfo:
     def ResetPlayerInfo(self):
         self.ZhanDouLi = random.randint(10, 20)
         self.HP = random.randint(100, 200)
-        self.WuXin = random.randint(10, 40) / 100
+        self.WuXin = round(random.random() * 10, 3)
         self.YunQi = random.randint(10, 20)
-        self.TiLi -= 1
+        self.TiLi = 0
 
     def InitPlayerData(self, strSendName=None):
         self.ZhanDouLi = random.randint(10, 20)
         self.HP = random.randint(100, 200)
-        self.WuXin = random.randint(10, 40) / 100
+        self.WuXin = round(random.random() * 10, 3)
         self.YunQi = random.randint(10, 20)
         self.TiLi = nMaxTTTLLL
         self.UpdateCount = 0
@@ -43,27 +43,27 @@ class PlayerInfo:
 
     def AddPlayerZDL(self, nAddZDL):
         self.ZhanDouLi += nAddZDL
-        self.ZhanDouLi = round(self.ZhanDouLi, 2)
+        self.ZhanDouLi = round(self.ZhanDouLi, 3)
 
     def AddPlayerHP(self, nAddHP):
         self.HP += nAddHP
-        self.HP = round(self.HP, 2)
+        self.HP = round(self.HP, 3)
 
     def AddPlayerWX(self, nAddWX):
         self.WuXin += nAddWX
-        self.WuXin = round(self.WuXin, 2)
+        self.WuXin = round(self.WuXin, 3)
 
     def AddPlayerYunQi(self, nAddYunQi):
         self.YunQi += nAddYunQi
-        self.YunQi = round(self.YunQi, 2)
+        self.YunQi = round(self.YunQi, 3)
 
     # 战斗力自增
     def UpdatePlayerZDL(self):
         self.ZhanDouLi += self.WuXin
-        self.ZhanDouLi = round(self.ZhanDouLi, 2)
+        self.ZhanDouLi = round(self.ZhanDouLi, 3)
         self.UpdateCount += 1
         # self.TiLi += 1
-        if (self.UpdateCount >= 600):
+        if (self.UpdateCount >= (60*10*30)):
             self.UpdateCount = 0
             self.TiLi += 1
             if (self.TiLi > nMaxTTTLLL):
@@ -80,39 +80,45 @@ class PlayerInfo:
     def AdventureGame(self) -> str:
         if (self.TiLi <= 0):
             return "体力不足"
-        self.TiLi -= 1
         fPlayerRate = self.YunQi / (self.YunQi + 100)
         fRandom = random.random()
         if (fRandom <= fPlayerRate):
             # print("触发成功", fPlayerRate, fRandom)
-            strCon = "气运加成触发成功,增加5%所有属性"
-            self.Add5PlayerInfo()
+            strCon = "气运加成触发成功,增加"+str(self.TiLi*5)+"%所有属性"
+            for i in range(self.TiLi):
+                self.Add5PlayerInfo()
+            self.TiLi = 0
             strPlayerInfo = self.PrintPlayerInfo()
             return strCon+"\n"+strPlayerInfo
         else:
-            bAdd = random.randint(0, 10) >= 5
+            bAdd = random.randint(0, 10) >= 8
             if bAdd:
-                strCon = "遇到一个魔兽,顺手杀了,增加2%的战斗力和血量"
-                self.AddRandomInfo()
+                strCon = "遇到" + str(self.TiLi) + \
+                    "个魔兽,顺手杀了,增加"+str(self.TiLi*2)+"%的战斗力和血量"
+                for i in range(self.TiLi):
+                    self.AddRandomInfo()
             else:
-                strCon = "遇到一个仇家,没打过,消耗元神才逃过去,扣除3%的战斗力和血量"
-                self.ReduceRandomInfo()
+                strCon = "遇到" + str(self.TiLi) + \
+                    "个仇家,没打过,消耗元神才逃过去,扣除"+str(self.TiLi*3)+"%的战斗力和血量"
+                for i in range(self.TiLi):
+                    self.ReduceRandomInfo()
+            self.TiLi = 0
             strPlayerInfo = self.PrintPlayerInfo()
-            return "\n玩家去冒险:\n" + strCon+"\n"+strPlayerInfo
+            return "\n玩家去冒险:\n" + strCon+"\n"+strPlayerInfo+'\n本次冒险扣除全部体力'
 
     def AddRandomInfo(self, nPer=2):
-        self.AddPlayerZDL(round(self.ZhanDouLi * nPer / 100, 2))
-        self.AddPlayerHP(round(self.HP * nPer / 100, 2))
+        self.AddPlayerZDL(round(self.ZhanDouLi * nPer / 100, 3))
+        self.AddPlayerHP(round(self.HP * nPer / 100, 3))
 
     def ReduceRandomInfo(self, nPer=3):
-        self.AddPlayerZDL(-round(self.ZhanDouLi * nPer / 100, 2))
-        self.AddPlayerHP(-round(self.HP * nPer / 100, 2))
+        self.AddPlayerZDL(-round(self.ZhanDouLi * nPer / 100, 3))
+        self.AddPlayerHP(-round(self.HP * nPer / 100, 3))
 
     def Add5PlayerInfo(self, nPer=5):
-        self.AddPlayerZDL(round(self.ZhanDouLi * nPer / 100, 2))
-        self.AddPlayerHP(round(self.HP * nPer / 100, 2))
-        self.AddPlayerWX(round(self.WuXin * nPer / 100, 2))
-        self.AddPlayerYunQi(round(self.YunQi * nPer / 100, 2))
+        self.AddPlayerZDL(round(self.ZhanDouLi * nPer / 100, 3))
+        self.AddPlayerHP(round(self.HP * nPer / 100, 3))
+        self.AddPlayerWX(round(self.WuXin * nPer / 100, 3))
+        self.AddPlayerYunQi(round(self.YunQi * nPer / 100, 3))
 
     def MarrWithUser(self, DanShenUse):
         self.WifeID = DanShenUse.UserID
@@ -126,7 +132,7 @@ class PlayerInfo:
             return "没有对象"
         else:
             allZDL = self.ZhanDouLi + wifePlayer.ZhanDouLi
-            AddZDL = round(allZDL * 4 / 100, 2) * self.TiLi
+            AddZDL = round(allZDL * 4 / 100, 3) * self.TiLi
             self.AddPlayerZDL(AddZDL)
             return "你把<" + self.WifeName + ">的*****,一起***,然后***,接着<" + self.WifeName + ">*****,****对方****,最后****\n" +\
                 "修炼完成,你提升了双方战力总和的4%,共"+str(AddZDL)+"点\n" +\
@@ -145,7 +151,7 @@ class PlayerInfo:
                 "总血量:"+str(self.HP)+"\n" +\
                 "悟性(战力提升速度(每秒)):"+str(self.WuXin)+"\n" +\
                 "气运:"+str(self.YunQi)+"\n" +\
-                "剩余体力(10分钟恢复1点):"+str(self.TiLi)+"\n" +\
+                "剩余体力(30分钟恢复1点):"+str(self.TiLi)+"\n" +\
                 "道侣信息:"+str(self.WifeName)+"("+str(self.WifeID)+")\n"
         else:
             strInfo = "用户:<"+self.UserName + ">的信息:\n" +\
@@ -153,7 +159,7 @@ class PlayerInfo:
                 "总血量:"+str(self.HP)+"\n" +\
                 "悟性(战力提升速度(每秒)):"+str(self.WuXin)+"\n" +\
                 "气运:"+str(self.YunQi)+"\n" +\
-                "剩余体力(10分钟恢复1点):"+str(self.TiLi)+"\n" +\
+                "剩余体力(30分钟恢复1点):"+str(self.TiLi)+"\n" +\
                 "没有道侣"+"\n"
 
         return strInfo
@@ -180,7 +186,9 @@ class XiuXianGame:
         else:
             player = self.InitOnePlayer(strPlayerID, strSendName)
             strIII = player.PrintPlayerInfo()
-            strCC = "新建玩家角色成功:\n"+"初始属性:\n"+strIII
+            strCC = "新建玩家角色成功:\n"+"初始属性:\n"+strIII+"\n9点悟性以上为卓越天资"
+            if player.WuXin >= 9:
+                strCC += ("\n"+"恭喜抽到卓越天资!\n")
         return player, strCC
 
     def UpdatePlayersZDL(self):
@@ -327,6 +335,58 @@ class XiuXianGame:
             uuser: PlayerInfo = self.MapPlayer[tarUID]
             strReturn = "此人信息如下:\n"+uuser.PrintPlayerInfo()
         return strReturn
+
+    def QiuHun(self, strID, strSendName, tarUID):
+        if (tarUID not in self.MapPlayer):
+            strReturn = "此人还未进入修仙世界,无法互动"
+        else:
+            player, strCC = self.GetPlayerInfo(strID, strSendName)
+            if (len(player.WifeID) > 0):
+                strReturn = "已有一个<"+player.WifeName + \
+                    ">("+player.WifeID+")作伴,莫要沾花惹草"
+            else:
+                QHPlayer: PlayerInfo = self.MapPlayer[tarUID]
+                if len(QHPlayer.WifeID) > 0:
+                    strReturn = "<"+QHPlayer.UserName+">为<" + \
+                        QHPlayer.WifeName+">的人妻(人夫),可尝试勾引之"
+                else:
+                    strDDD = ""
+                    if QHPlayer.ZhanDouLi > player.ZhanDouLi:
+                        strDDD = "战斗力"
+                    if QHPlayer.HP > player.HP:
+                        strDDD = "血量"
+                    if QHPlayer.WuXin > player.WuXin:
+                        strDDD = "悟性"
+                    if QHPlayer.YunQi > player.YunQi:
+                        strDDD = "气运"
+                    if len(strDDD) > 0:
+                        player.ReduceRandomInfo(10)
+                        strReturn = "<"+QHPlayer.UserName + \
+                            ">轻蔑的打量了你一下,笑道:'["+strDDD + \
+                            "]这么低,也配和我做道侣?回去撒泡尿照照镜子吧!'\n求婚失败,心魔附体,扣除10%的战力和血量"
+                    else:
+                        player.MarrWithUser(QHPlayer)
+                        strReturn = "<"+QHPlayer.UserName + \
+                            ">面对你的求爱,不禁羞红了脸,\n缓缓说道:'上仙实力超群,是天下修炼者的梦中之人,你之所想亦是我之所愿'\n你们二人成功结为道侣"
+        return strReturn
+
+    def GetRank15Num(self, nNum=15):
+        arr = []
+        for pIndex in self.MapPlayer:
+            pl: PlayerInfo = self.MapPlayer[pIndex]
+            info = {"name": pl.UserName, "zl": pl.ZhanDouLi, "wf": pl.WifeName}
+            arr.append(info)
+        arr.sort(key=lambda a: a["zl"])
+        arr.reverse()
+
+        strRank = ""
+        for i in range(len(arr)):
+            info = arr[i]
+            strRank += ("排名:"+str(i+1)+",昵称:" +
+                        str(info["name"])+",战斗力:"+str(info["zl"])+",道侣:"+info["wf"]+'\n')
+            if (i >= nNum):
+                break
+        return strRank
 
     def LoadAllPlayerInfo(self):
         try:
