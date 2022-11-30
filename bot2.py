@@ -29,6 +29,11 @@ import numpy as np
 from typing import Tuple
 import imageio
 from xiuxian import *
+import subprocess
+from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
+from urllib3.util.ssl_ import create_urllib3_context
+
 
 nBotQQID = 1209916110
 nMasterQQ = 1973381512
@@ -110,6 +115,47 @@ proxies = {
     'https': 'https://127.0.0.1:1080'
 }
 
+#################################################################################################
+
+safeArr = []
+try:
+    with open(curFileDir / "safeQun.json", "r", encoding="utf-8") as f:
+        safeQun = json.load(f)
+        safeArr = safeQun['safe']
+except:
+    print("白名单初始化失败")
+
+
+def SaveSafeQunInfo():
+    with open(curFileDir / "safeQun.json", 'w', encoding="utf-8")as f:
+        data = {"safe": safeArr}
+        json.dump(data, f)
+
+
+def CheckSafeQun(strQunID):
+    strQunID = str(strQunID)
+    if strQunID in safeArr:
+        return True
+    return False
+
+
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
 #################################################################################################
 emojis = {'128516': '20201001', '128512': '20201001', '128578': '20201001', '128579': '20201001', '128515': '20201001', '128513': '20201001', '128522': '20201001', '128519': '20201001', '128518': '20201001', '128514': '20201001', '129315': '20201001', '128517': '20201001', '128521': '20201001', '128535': '20201001', '128537': '20201001', '128538': '20201001', '128536': '20201001', '128525': '20201001', '129392': '20201001', '129321': '20201001', '128539': '20201001', '128541': '20201001', '128523': '20201001', '128540': '20201001', '129322': '20201001', '129297': '20201001', '129394': '20201001', '129303': '20201001', '129323': '20201001', '129325': '20201001', '129762': '20211115', '129763': '20211115', '129296': '20201001', '128566': '20201001', '129300': '20201001', '129320': '20201001', '128528': '20201001', '128529': '20201001', '128566-8205-127787-65039': '20210218', '128527': '20201001', '128524': '20201001', '128556': '20201001', '128580': '20201001', '128530': '20201001', '128558-8205-128168': '20210218', '128542': '20201001', '128532': '20201001', '129317': '20201001', '129393': '20201001', '128554': '20201001', '128564': '20201001', '129316': '20201001', '128567': '20201001', '129298': '20201001', '129301': '20201001', '129314': '20201001', '129326': '20201001', '129319': '20201001', '129397': '20201001', '129398': '20201001', '128565': '20201001', '129396': '20201001', '129760': '20211115', '129327': '20201001', '129312': '20201001', '129395': '20201001', '129400': '20201001', '129488': '20201001', '128526': '20201001', '128533': '20201001', '129764': '20211115', '128543': '20201001', '128577': '20201001', '128558': '20201001', '128559': '20201001', '128562': '20201001', '128551': '20201001', '128550': '20201001', '128552': '20201001', '128560': '20201001', '128561': '20201001', '128563': '20201001', '129761': '20211115', '129765': '20211115', '129401': '20211115', '129402': '20201001', '129299': '20201001', '128546': '20201001', '128557': '20201001', '128549': '20201001', '128531': '20201001', '128555': '20201001', '128553': '20201001', '128547': '20201001', '128534': '20201001', '128544': '20201001', '128545': '20201001', '129324': '20201001', '128548': '20201001', '128520': '20201001', '128127': '20201001', '128169': '20201001', '128128': '20201001', '128125': '20201001', '128123': '20201001', '129302': '20201001', '129313': '20201001',
           '127875': '20201001', '127801': '20201001', '127804': '20201001', '127799': '20201001', '127800': '20210218', '128144': '20201001', '127797': '20201001', '127794': '20201001', '129717': '20211115', '127821': '20201001', '129361': '20201001', '127798-65039': '20201001', '127820': '20211115', '127827': '20210831', '127819': '20210521', '127818': '20211115', '127874': '20201001', '129473': '20201001', '129472': '20201001', '127789': '20201001', '127838': '20210831', '9749': '20201001', '127869-65039': '20201001', '129440': '20201001', '9924': '20201001', '127882': '20201001', '127880': '20201001', '128142': '20201001', '128139': '20201001', '128148': '20201001', '128140': '20201001', '128152': '20201001', '128159': '20201001', '128149': '20201001', '128158': '20201001', '128147': '20201001', '128151': '20201001', '10084-65039-8205-129657': '20210218', '10084-65039': '20201001', '129505': '20201001', '128155': '20201001', '128154': '20201001', '128153': '20201001', '128156': '20201001', '129294': '20201001', '129293': '20201001', '128420': '20201001', '128150': '20201001', '128157': '20201001', '127873': '20211115', '127895-65039': '20201001', '127942': '20211115', '129351': '20220203', '129352': '20220203', '129353': '20220203', '127941': '20220203', '128240': '20201001', '127911': '20210521', '128175': '20201001', '128064': '20201001', '127751': '20210831', '128371-65039': '20201001', '129668': '20210521', '128302': '20201001', '128293': '20201001', '128081': '20201001', '128049': '20201001', '129409': '20201001', '128047': '20220110', '128053': '20201001', '128584': '20201001', '128055': '20201001', '129412': '20210831', '129420': '20201001', '128016': '20210831', '129433': '20201001', '128038': '20210831', '129417': '20210831', '128039': '20211115', '129415': '20201001', '128029': '20201001', '128375-65039': '20201001', '128034': '20201001', '128025': '20201001', '128060': '20201001', '128059': '20210831', '128040': '20201001', '129445': '20201001', '128048': '20201001', '128045': '20201001', '129428': '20201001', '128054': '20211115', '128041': '20211115', '129437': '20211115', '128012': '20210218', '129410': '20210218', '128031': '20210831', '127757': '20201001', '127774': '20201001', '127775': '20201001', '11088': '20201001', '127772': '20201001', '127771': '20201001', '128171': '20201001', '127752': '20201001', '9729-65039': '20201001', }
@@ -708,6 +754,167 @@ def generate_random_str(randomlength=nRandomCodeLenth):
     return random_str
 
 
+class CipherAdapter(HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        context = create_urllib3_context(ciphers='DEFAULT:@SECLEVEL=2')
+        kwargs['ssl_context'] = context
+        return super(CipherAdapter, self).init_poolmanager(*args, **kwargs)
+
+    def proxy_manager_for(self, *args, **kwargs):
+        context = create_urllib3_context(ciphers='DEFAULT:@SECLEVEL=2')
+        kwargs['ssl_context'] = context
+        return super(CipherAdapter, self).proxy_manager_for(*args, **kwargs)
+
+
+def PhSearch(strKeyWord="creampie"):
+    nRandonPage = random.randint(1, 10)
+    aa = "https://cn.pornhub.com/video/search?search=" + \
+        strKeyWord + "&page="+str(nRandonPage)
+    cookie = 'ua=792de51e4d5be52a35f55f3570193fc3; platform=pc; bs=uewrlr1xtwod7clqaffy6tw5j2ih4ctm; ss=477534240577294540; fg_0d2ec4cbd943df07ec161982a603817e=26779.100000; fg_ce380f5de826083ae8d091d019e9673d=4555.100000; hasVisited=1; __s=6385D335-42FE722901BB808B-17946602; __l=6385D335-42FE722901BB808B-17946602; atatusScript=hide'
+    headers = {
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja-JP;q=0.6,ja;q=0.5,ko-KR;q=0.4,ko;q=0.3,zh-HK;q=0.2,zh-TW;q=0.1',
+        'cookie': cookie,
+        'sec-ch-ua': '"Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': "Windows",
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'none',
+        'sec-fetch-user': '?1',
+        'upgrade-insecure-requests': '1',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+    }
+    try:
+        s = requests.Session()
+        s.mount('https://', CipherAdapter())
+        dataArr = []
+        html = s.get(aa, headers=headers, stream=True)
+        soup = BeautifulSoup(html.text, "html.parser")
+        # 取HTML標中的 <span class="title"></span> 中的<a>標籤存入sel
+        sel = soup.select("span.title a")
+        for s in sel:
+            if "view_video" in s["href"]:
+                dataddd = {"url": "https://cn.pornhub.com" +
+                           s["href"], "title": s["title"]}
+                dataArr.append(dataddd)
+        if len(dataArr) > 0:
+            rrIndex = random.randint(0, len(dataArr) - 1)
+            oneDDD = dataArr[rrIndex]
+            return "找到一个视频,请查收:\n"+"视频标题:\n" + oneDDD["title"]+"\n视频链接:\n"+oneDDD["url"]+"\n请自行享用"
+        else:
+            return "没找到相关视频"
+    except:
+        return "没找到相关视频"
+
+
+def LookZB():
+    aa = "https://chaturbate.com/?g=f"  # female
+    cookie = 'csrftoken=P8VXO4WNuSMtpwW9lDCTPZXTuGPmGmgfAOkkDxuYXobVC4BKyubQyv97YhXKdYN7; affkey="eJyrVipSslJQUqoFAAwfAk0="; sbr=sec:sbr1be73a5c-60c7-41fc-bb1d-c6e826bd608c:1p0C1w:vK2YAMBN6S2LGZuJZBo96d_A4iQ; pageaction_sample_id=87; __utfpp=f:trnx10bbde743b858ccc65de03557ca72292:1p0C20:A_vj2dyIZd-bJesFmNwlNyZomCs; __cf_bm=vdtWtvfq_gZjSDz6JOqNuwulXk1pznzRItM2ZP_CbdU-1669772221-0-AZ3BDGji1F0BX3uz0XlrKVyr5dimtj/+oPRsz5Pp96QL8EuIM9TpvzpLI/UlCFGckZ2Eb0IOZDdYRr+J+lpy4I3Zi5NTI7FrsMviQk9q5RKcdUAk3f2pXNFieJ3q4B6ekYdzFu1fqI0k1iG+b4F37/2igCleM3CGmyph3zRGBHxAlvKzbd3zvw+AourhJgPHDA==; agreeterms=1'
+    headers = {
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'accept-encoding': 'gzip, deflate',
+        'accept-language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja-JP;q=0.6,ja;q=0.5,ko-KR;q=0.4,ko;q=0.3,zh-HK;q=0.2,zh-TW;q=0.1',
+        'cookie': cookie,
+        'sec-ch-ua': '"Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': "Windows",
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'none',
+        'sec-fetch-user': '?1',
+        'upgrade-insecure-requests': '1',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+    }
+    s = requests.Session()
+    s.mount('https://', CipherAdapter())
+    html = s.get(aa, headers=headers, stream=True)
+    soup = BeautifulSoup(html.text, "html.parser")
+    LIST = soup.findAll('ul', {'class': 'list'})[0]
+    models = LIST.findAll('div', {'class': 'details'})
+    modelsImg = LIST.findAll('img', {'class': 'png room_thumbnail'})
+    zbDataArr = []
+    if len(models) == len(modelsImg):
+        for ii in range(len(models)):
+            mdInfo = models[ii]
+            imgInfo = modelsImg[ii]
+            roomName = mdInfo.find("a")
+            viewNum = mdInfo.find("span", {'class': 'viewers'})
+            openTime = mdInfo.find("span", {'class': 'time'})
+            title = mdInfo.find("ul", {'class': 'subject'})
+            ttt = title.find("li")
+            img = imgInfo["src"]
+
+            zdData = {"title": ttt["title"], "img": img,
+                      "url": roomName["data-room"], "viewNum": viewNum.string, "openTime": openTime.string}
+            zbDataArr.append(zdData)
+
+    if (len(zbDataArr) > 0):
+        rIndex = random.randint(0, len(zbDataArr)-1)
+        iii = zbDataArr[rIndex]
+        strRt = "找到一个直播间:\n标题:\n"+iii["title"]+"\n主播名字: "+iii["url"] + \
+            "\n观看人数: "+iii["viewNum"]+"\n已经直播时长: "+iii["openTime"]
+        return strRt, iii
+
+def lookCeleZB():
+        
+    aa = "https://zh.celebs.live/"  # female
+    cookie = 'ABTest_ab_25_tokens_instead_20_key=A; ABTest_ab_index_header_names_girls_key=B; ABTest_start_private_with_price_key=B; celebs_live_guestId=ecb73152e4045cfea6746cd2df0a4de770b6b4aeceb7c0dbcd714685b63d; celebs_live_firstVisit=2022-11-30T01:30:09Z; guestWatchHistoryIds=; guestFavoriteIds=; baseAmpl={"up":{"page":"index","navigationParams":{"limit":60,"offset":0}}}; alreadyVisited=1; isVisitorsAgreementAccepted=1'
+    headers = {
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'accept-encoding': 'gzip, deflate',
+        'accept-language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,ja-JP;q=0.6,ja;q=0.5,ko-KR;q=0.4,ko;q=0.3,zh-HK;q=0.2,zh-TW;q=0.1',
+        'cookie': cookie,
+        'sec-ch-ua': '"Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': "Windows",
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'none',
+        'sec-fetch-user': '?1',
+        'upgrade-insecure-requests': '1',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+    }
+    s = requests.Session()
+    s.mount('https://', CipherAdapter())
+
+    zbDataArr = []
+    html = s.get(aa, headers=headers, stream=True)
+    soup = BeautifulSoup(html.text, "html.parser")
+    LIST = soup.find('div', {'class': 'main-layout-main-content'})
+    models = []
+    try:
+        models = LIST.findAll('div', {'class': 'model-list-item'})
+    except:
+        return "网络错误", None
+
+    for ii in models:
+        if "model-list-item-username model-name" in str(ii):
+            iii = ii.find("span", {'class': 'model-list-item-username model-name'})
+            imgInfo = ii.find("a")
+            if "style" in str(imgInfo):
+                imgInfo = str(imgInfo["style"])
+                strImgCont1 = [i.strip()
+                            for i in imgInfo.split("(") if i.strip()][1]
+                strImgCont2 = [i.strip()
+                            for i in strImgCont1.split(")") if i.strip()][0]
+                # print("===>", iii.string, strImgCont2)
+                zdData = {"title": iii.string, "img": strImgCont2,
+                        "url": "https://zh.celebs.live/"+iii.string}
+                zbDataArr.append(zdData)
+
+    if (len(zbDataArr) > 0):
+        rIndex = random.randint(0, len(zbDataArr)-1)
+        iii = zbDataArr[rIndex]
+        strRt = "找到一个直播间:\n标题:\n"+iii["title"] + \
+            "\n主播名字: "+iii["title"]+"\n直播地址: "+iii["url"]
+        return strRt, iii
+    else:
+        return "网络错误", None
+
+
+
 @app.broadcast.receiver(GroupMessage)
 async def group_message_listener(app: Ariadne, group: Group,  message: MessageChain, event: GroupMessage):
 
@@ -720,6 +927,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
     global nMasterQQ
     global nBotQQID
     global xxGame
+    global safeArr
     strCont = str(message)
     bWihteUser = False
     if event.sender.id == nMasterQQ:
@@ -727,6 +935,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
     nSendID = event.sender.id
     strSendName = event.sender.name
     strUID = str(nSendID)
+    strGroupID = str(group.id)
     # print("strCont", strCont, event.sender.id)
 
     if random_str == strCont:
@@ -744,6 +953,32 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             strRep = chatAI(str(event.message_chain))
             return app.send_message(group, MessageChain(Plain(strRep)), quote=message)
     else:
+        if "添加白名单" in strCont and bWihteUser:
+            argsCount = [i.strip() for i in strCont.split(" ") if i.strip()]
+            if len(argsCount) == 1:
+                if strGroupID not in safeArr:
+                    safeArr.append(strGroupID)
+                    SaveSafeQunInfo()
+                return app.send_message(group, "本群添加成功", quote=message)
+            else:
+                strGroupID222 = argsCount[1]
+                if strGroupID222 not in safeArr:
+                    safeArr.append(strGroupID222)
+                    SaveSafeQunInfo()
+                return app.send_message(group, strGroupID222 + " 添加成功", quote=message)
+        if "移除白名单" in strCont and bWihteUser:
+            argsCount = [i.strip() for i in strCont.split(" ") if i.strip()]
+            if len(argsCount) == 1:
+                if strGroupID in safeArr:
+                    safeArr.remove(strGroupID)
+                    SaveSafeQunInfo()
+                return app.send_message(group, "本群移除成功", quote=message)
+            else:
+                strGroupID222 = argsCount[1]
+                if strGroupID222 in safeArr:
+                    safeArr.remove(strGroupID222)
+                    SaveSafeQunInfo()
+                return app.send_message(group, strGroupID222 + " 移除成功", quote=message)
         if "次数" in strCont and bWihteUser:
             argsCount = [i.strip() for i in strCont.split(" ") if i.strip()]
             if len(argsCount) == 3:
@@ -767,7 +1002,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                 AddOnePbc(strPPBBCC)
                 return app.send_message(group, strPPBBCC+"屏蔽成功", quote=message)
         if "生成图" in strCont or "/ai text" in strCont:
-            return app.send_message(group, "公司电脑配置低, 无法使用AI合图", quote=message)
+            return app.send_message(group, "电脑配置低, 无法使用AI合图", quote=message)
             if GetLocalTimeHourNight():
                 return app.send_message(group, "时间太晚了, 明天7点再来吧", quote=message)
             bCan, nLeft = CheckSDLeftTimesNotDelet(nSendID)
@@ -837,7 +1072,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             floatTxt2img = time.time()
             return app.send_message(group, repl3, quote=message)
         if "图生图" in strCont or "/ai image" in strCont:
-            return app.send_message(group, "公司电脑配置低, 无法使用AI合图", quote=message)
+            return app.send_message(group, "电脑配置低, 无法使用AI合图", quote=message)
             if GetLocalTimeHourNight():
                 return app.send_message(group, "时间太晚了, 明天7点再来吧", quote=message)
             bCan, nLeft = CheckSDLeftTimesNotDelet(nSendID)
@@ -918,6 +1153,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                 repl3 = MessageChain(Image(base64=img64), Plain(strRepl))
                 return app.send_message(group, repl3, quote=message)
         if "画质" in strCont or "高清" in strCont:
+            # return app.send_message(group, "电脑配置低, 无法使用高清化", quote=message)
             imageArr = event.message_chain[Image]
             # print("=============>"+str(imageArr))
             if len(imageArr) == 1:
@@ -939,8 +1175,9 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                         At(event.sender.id), Plain("原图分辨率有边长超过1600,不再使用高清化"))
                     return app.send_message(group, repl31)
                 strADB = "realesrgan-ncnn-vulkan.exe -i " + \
-                    strPathName + " -o ./realesrgan/output.png -n " + strRRRR+" -s 2"
-                os.system(strADB)
+                    strPathName + " -o ./realesrgan/output.png -n " + strRRRR+""
+                # os.system(strADB)
+                subprocess.run(strADB, shell=True)
                 strRepl = "\n画质提升好了,模型:" + strRRRR + \
                     "\n点击查看原图看效果\n默认使用真实世界模型\n发送'高清漫画'可以使用动漫专属模型"
                 repl3 = MessageChain(
@@ -1123,7 +1360,52 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             create_gif(gifNameArr, gifName)
             return app.send_message(group, MessageChain(At(event.sender.id), Image(path=gifName)), quote=message)
             # A = 112
-        if True:
+
+        if strCont.startswith("ph搜索") or strCont.startswith("搜索"):
+            if not CheckSafeQun(strGroupID):
+                return app.send_message(group, "本群不安全, 没权限使用此命令", quote=message)
+            args = [i.strip() for i in strCont.split(" ") if i.strip()]
+            if len(args) == 2:
+                strKKK = args[1]
+                strRRRRRRR = PhSearch(strKKK)
+                return app.send_message(group, strRRRRRRR, quote=message)
+        if strCont == "看直播":
+            if not CheckSafeQun(strGroupID):
+                return app.send_message(group, "本群不安全, 没权限使用此命令", quote=message)
+            strRRR, info = LookZB()
+            if info != None:
+                strZZBBB = MessageChain(Plain(strRRR), Image(url=info["img"]))
+                return app.send_message(group, strZZBBB, quote=message)
+        if strCont == "看直播2":
+            if not CheckSafeQun(strGroupID):
+                return app.send_message(group, "本群不安全, 没权限使用此命令", quote=message)
+            strRRR, info = lookCeleZB()
+            if info != None:
+                filename = "./realesrgan/clTest.jpg"
+                res = requests.get(info["img"])
+                byte_stream = BytesIO(res.content)
+                img= ImagePIL.open(byte_stream)
+                img.load(),img.save(filename)
+                strZZBBB = MessageChain(Plain(strRRR), Image(path=filename))
+                return app.send_message(group, strZZBBB, quote=message)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        if False:
             if "活一世" in strCont or "修仙重生" in strCont:
                 pl, strCon = xxGame.GetPlayerInfo(strUID, strSendName)
                 if not strCon.startswith("新建"):
@@ -1146,7 +1428,8 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                     "8,查看信息@此人\n" +\
                     "9,求婚@此人\n" +\
                     "10,修仙排名\n" +\
-                    "11,再活一世"
+                    "11,修仙gm 账号 项目 数量\n" +\
+                    "12,再活一世"
                 return app.send_message(group, strCon, quote=message)
             if "开始修仙" in strCont:
                 pl, strCon = xxGame.GetPlayerInfo(strUID, strSendName)
@@ -1186,7 +1469,7 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                     tarID = str(atInfoArr[0].target)
                     strCCCC = xxGame.LookThisManInfo(tarID)
                     return app.send_message(group, strCCCC, quote=message)
-            if "求婚"in strCont:
+            if "求婚" in strCont:
                 atInfoArr = event.message_chain[At]
                 if (len(atInfoArr) == 1):
                     tarID = str(atInfoArr[0].target)
@@ -1195,4 +1478,27 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             if "修仙排名" in strCont:
                 strasd = xxGame.GetRank15Num()
                 return app.send_message(group, strasd, quote=message)
+            if "修仙gm" in strCont:
+                if not bWihteUser:
+                    return app.send_message(group, "就你?", quote=message)
+                args = [i.strip() for i in strCont.split(" ") if i.strip()]
+                if (len(args) == 4):
+                    try:
+                        uid = args[1]
+                        strAddKey = args[2]
+                        nAddNum = int(args[3])
+                        pl: PlayerInfo = xxGame.MapPlayer[uid]
+                        if strAddKey == "血量":
+                            pl.HP += nAddNum
+                        if strAddKey == "悟性":
+                            pl.WuXin += nAddNum
+                        if strAddKey == "战力":
+                            pl.ZhanDouLi += nAddNum
+                        if strAddKey == "体力":
+                            pl.TiLi += nAddNum
+                        if strAddKey == "气运":
+                            pl.YunQi += nAddNum
+                    except:
+                        aaa = 0
+
 Ariadne.launch_blocking()

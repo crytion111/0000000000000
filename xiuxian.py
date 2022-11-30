@@ -63,7 +63,7 @@ class PlayerInfo:
         self.ZhanDouLi = round(self.ZhanDouLi, 3)
         self.UpdateCount += 1
         # self.TiLi += 1
-        if (self.UpdateCount >= (60*10*30)):
+        if (self.UpdateCount >= (60*30)):
             self.UpdateCount = 0
             self.TiLi += 1
             if (self.TiLi > nMaxTTTLLL):
@@ -145,12 +145,14 @@ class PlayerInfo:
             self.TiLi -= 1
 
     def PrintPlayerInfo(self):
+        fPlayerRate = (self.YunQi / (self.YunQi + 100)) * 100
+        fPlayerRate = round(fPlayerRate, 2)
         if (len(self.WifeID) > 0):
             strInfo = "用户:<"+self.UserName + ">的信息:\n" +\
                 "总战力:"+str(self.ZhanDouLi)+"\n" +\
                 "总血量:"+str(self.HP)+"\n" +\
                 "悟性(战力提升速度(每秒)):"+str(self.WuXin)+"\n" +\
-                "气运:"+str(self.YunQi)+"\n" +\
+                "气运:"+str(self.YunQi)+"("+str(fPlayerRate)+"%的极品事件概率加成)\n" +\
                 "剩余体力(30分钟恢复1点):"+str(self.TiLi)+"\n" +\
                 "道侣信息:"+str(self.WifeName)+"("+str(self.WifeID)+")\n"
         else:
@@ -158,7 +160,7 @@ class PlayerInfo:
                 "总战力:"+str(self.ZhanDouLi)+"\n" +\
                 "总血量:"+str(self.HP)+"\n" +\
                 "悟性(战力提升速度(每秒)):"+str(self.WuXin)+"\n" +\
-                "气运:"+str(self.YunQi)+"\n" +\
+                "气运:"+str(self.YunQi)+"("+str(fPlayerRate)+"%的极品事件概率加成)\n" +\
                 "剩余体力(30分钟恢复1点):"+str(self.TiLi)+"\n" +\
                 "没有道侣"+"\n"
 
