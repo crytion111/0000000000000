@@ -33,7 +33,7 @@ import subprocess
 from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util.ssl_ import create_urllib3_context
-
+import http.client
 
 nBotQQID = 1209916110
 nMasterQQ = 1973381512
@@ -792,21 +792,23 @@ def PhSearch(strKeyWord="creampie"):
         dataArr = []
         html = s.get(aa, headers=headers, stream=True)
         soup = BeautifulSoup(html.text, "html.parser")
-        # 取HTML標中的 <span class="title"></span> 中的<a>標籤存入sel
-        sel = soup.select("span.title a")
-        for s in sel:
+        selAll = soup.select("div.phimage")
+        for sAll in selAll:
+            s = sAll.find("a")
+            sImg = sAll.find("img")
+            # print("sImg==>", sImg["src"])
             if "view_video" in s["href"]:
                 dataddd = {"url": "https://cn.pornhub.com" +
-                           s["href"], "title": s["title"]}
+                           s["href"], "title": s["title"], "image": sImg["src"]}
                 dataArr.append(dataddd)
         if len(dataArr) > 0:
             rrIndex = random.randint(0, len(dataArr) - 1)
             oneDDD = dataArr[rrIndex]
-            return "找到一个视频,请查收:\n"+"视频标题:\n" + oneDDD["title"]+"\n视频链接:\n"+oneDDD["url"]+"\n请自行享用"
+            return "找到一个视频,请查收:\n"+"视频标题:\n" + oneDDD["title"]+"\n视频链接:\n"+oneDDD["url"]+"\n请自行享用", oneDDD
         else:
-            return "没找到相关视频"
+            return "没找到相关视频", None
     except:
-        return "没找到相关视频"
+        return "没找到相关视频", None
 
 
 def LookZB():
@@ -854,11 +856,13 @@ def LookZB():
         rIndex = random.randint(0, len(zbDataArr)-1)
         iii = zbDataArr[rIndex]
         strRt = "找到一个直播间:\n标题:\n"+iii["title"]+"\n主播名字: "+iii["url"] + \
-            "\n观看人数: "+iii["viewNum"]+"\n已经直播时长: "+iii["openTime"]
+            "\n观看人数: "+iii["viewNum"]+"\n已经直播时长: "+iii["openTime"] + \
+                "\n直播地址:\n" + ("https://chaturbate.com/"+iii["url"])
         return strRt, iii
 
+
 def lookCeleZB():
-        
+
     aa = "https://zh.celebs.live/"  # female
     cookie = 'ABTest_ab_25_tokens_instead_20_key=A; ABTest_ab_index_header_names_girls_key=B; ABTest_start_private_with_price_key=B; celebs_live_guestId=ecb73152e4045cfea6746cd2df0a4de770b6b4aeceb7c0dbcd714685b63d; celebs_live_firstVisit=2022-11-30T01:30:09Z; guestWatchHistoryIds=; guestFavoriteIds=; baseAmpl={"up":{"page":"index","navigationParams":{"limit":60,"offset":0}}}; alreadyVisited=1; isVisitorsAgreementAccepted=1'
     headers = {
@@ -891,17 +895,18 @@ def lookCeleZB():
 
     for ii in models:
         if "model-list-item-username model-name" in str(ii):
-            iii = ii.find("span", {'class': 'model-list-item-username model-name'})
+            iii = ii.find(
+                "span", {'class': 'model-list-item-username model-name'})
             imgInfo = ii.find("a")
             if "style" in str(imgInfo):
                 imgInfo = str(imgInfo["style"])
                 strImgCont1 = [i.strip()
-                            for i in imgInfo.split("(") if i.strip()][1]
+                               for i in imgInfo.split("(") if i.strip()][1]
                 strImgCont2 = [i.strip()
-                            for i in strImgCont1.split(")") if i.strip()][0]
+                               for i in strImgCont1.split(")") if i.strip()][0]
                 # print("===>", iii.string, strImgCont2)
                 zdData = {"title": iii.string, "img": strImgCont2,
-                        "url": "https://zh.celebs.live/"+iii.string}
+                          "url": "https://zh.celebs.live/"+iii.string}
                 zbDataArr.append(zdData)
 
     if (len(zbDataArr) > 0):
@@ -913,6 +918,56 @@ def lookCeleZB():
     else:
         return "网络错误", None
 
+
+strApiKey = "b7c280cf86964a4dadd948181b3346ad"
+conn = http.client.HTTPSConnection("api.scrapingant.com")
+
+
+def GetDataByUrl(strUrl):
+    conn.request("GET", "/v2/general?url=" + strUrl + "&x-api-key=" +
+                 strApiKey+"&cookies=language%3Dcn_CN&browser=false")
+    res = conn.getresponse()
+    data = res.read()
+    return data
+
+
+def GetDataByUrl2(strUrl):
+    conn.request("GET", "/v2/general?url=" + strUrl + "&x-api-key=" +
+                 strApiKey+"")
+    res = conn.getresponse()
+    data = res.read()
+    return data
+
+
+def Hot91VD():
+    page = random.randint(1, 5)
+    urlll = "https%3A%2F%2Fwww.91porn.com%2Fv.php%3Fcategory%3Dtop%26viewtype%3Dbasic%26page%3D" + \
+        str(page)
+    dataAll = GetDataByUrl(urlll)
+    soupAll = BeautifulSoup(dataAll, "html.parser")
+    selAll = soupAll.find("div", {"class": "col-sm-12"})
+    arrAll = selAll.find_all("a")
+    # print(len(arrAll))
+    nRandom = random.randint(0, len(arrAll) - 1)
+    nAdd = 0
+    for aaaa in arrAll:
+        if nAdd == nRandom:
+            vdUrl = aaaa["href"]
+            imgUrl = aaaa.find("img")["src"]
+            timeNum = aaaa.find("span", {"class": "duration"}).string
+            vdName = aaaa.find(
+                "span", {"class": "video-title title-truncate m-t-5"}).string
+
+            dataVDInfo = GetDataByUrl2(vdUrl)
+            soupVD = BeautifulSoup(dataVDInfo, "html.parser")
+            vdInfoUrl = soupVD.find("div", {"class": "video-container"})
+            vdInfoUrl = vdInfoUrl.find("source")
+            nAdd += 1
+            print(vdUrl, imgUrl, timeNum, vdInfoUrl["src"])
+            return vdUrl, imgUrl, timeNum, vdName, vdInfoUrl["src"]
+        else:
+            nAdd += 1
+    return None
 
 
 @app.broadcast.receiver(GroupMessage)
@@ -1367,8 +1422,13 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
             args = [i.strip() for i in strCont.split(" ") if i.strip()]
             if len(args) == 2:
                 strKKK = args[1]
-                strRRRRRRR = PhSearch(strKKK)
-                return app.send_message(group, strRRRRRRR, quote=message)
+                strRRRRRRR, oneData = PhSearch(strKKK)
+                if oneData == None:
+                    return app.send_message(group, strRRRRRRR, quote=message)
+                else:
+                    strPHH = MessageChain(
+                        Plain(strRRRRRRR), Image(url=oneData["image"]))
+                    return app.send_message(group, strPHH, quote=message)
         if strCont == "看直播":
             if not CheckSafeQun(strGroupID):
                 return app.send_message(group, "本群不安全, 没权限使用此命令", quote=message)
@@ -1384,26 +1444,31 @@ async def group_message_listener(app: Ariadne, group: Group,  message: MessageCh
                 filename = "./realesrgan/clTest.jpg"
                 res = requests.get(info["img"])
                 byte_stream = BytesIO(res.content)
-                img= ImagePIL.open(byte_stream)
-                img.load(),img.save(filename)
+                img = ImagePIL.open(byte_stream)
+                img.load(), img.save(filename)
                 strZZBBB = MessageChain(Plain(strRRR), Image(path=filename))
                 return app.send_message(group, strZZBBB, quote=message)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        if strCont == "91热门":
+            if not CheckSafeQun(strGroupID):
+                return app.send_message(group, "本群不安全, 没权限使用此命令", quote=message)
+            await app.send_message(group, "正在获取91本月热门视频,代理问题可能需要一分钟", quote=message)
+            try:
+                vdUrl, imgUrl, timeNum, vdName, vdInfoUrl = Hot91VD()
+            except BaseException as error:
+                vdUrl = None
+                print("91爬取,", error)
+            if vdUrl != None:
+                strRRR = "找到一个视频:\n"+vdName+"\n时长:"+timeNum + \
+                    "\n视频地址:\n"+vdInfoUrl+"\n\n(将此地址复制到<安卓的MX播放器>或者<windows的pot播放器>中即可播放,免翻墙)"
+                filename = "./realesrgan/91Test.jpg"
+                res = requests.get(imgUrl)
+                byte_stream = BytesIO(res.content)
+                img = ImagePIL.open(byte_stream)
+                img.load(), img.save(filename)
+                strZZBBB = MessageChain(Plain(strRRR), Image(path=filename))
+                return app.send_message(group, strZZBBB)
+            else:
+                return app.send_message(group, "爬取失败", quote=message)
 
         if False:
             if "活一世" in strCont or "修仙重生" in strCont:
